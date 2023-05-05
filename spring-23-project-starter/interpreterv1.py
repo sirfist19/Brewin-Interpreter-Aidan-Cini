@@ -4,6 +4,7 @@
 from bparser import *
 from intbase import *
 from fundamental_defs import *
+from class_ import ClassDef
 
 # This is the needed Interpreter class that is derived from InterpreterBase
 class Interpreter(InterpreterBase):
@@ -22,8 +23,8 @@ class Interpreter(InterpreterBase):
             return # error
         
         # now that the program is correctly parsed
-        #   INTERPRET THE PROGRAM 
-            #print(f'HERE IS THE PARSED PROGRAM: \n{parsed_program}')
+        # INTERPRET THE PROGRAM 
+        print(f'HERE IS THE PARSED PROGRAM: \n{parsed_program}')
         #self.__discover_all_classes_and_track_them(parsed_program)
         self.define_fundamentals(parsed_program)
             #print(self.classes)
@@ -45,7 +46,7 @@ class Interpreter(InterpreterBase):
             cur_class = ClassDef(class_name)
             for i in range(2,len(class_def)):
                 if type(class_def[i]) == list:
-                    # it is a method or a field
+                    # it is a field (the first element is field)
                     if class_def[i][0] == InterpreterBase.FIELD_DEF:
                         # handle a field
                         name, value_no_type = class_def[i][1], class_def[i][2]
@@ -55,6 +56,7 @@ class Interpreter(InterpreterBase):
                         #print(f"Field name: {name}, Value: {value.type, value.value}\n")
                         cur_class.add_field(cur_field)
 
+                    # if it is a method (first element is method)
                     elif class_def[i][0] == InterpreterBase.METHOD_DEF:
                         # handle a method
                         cur_method = class_def[i]

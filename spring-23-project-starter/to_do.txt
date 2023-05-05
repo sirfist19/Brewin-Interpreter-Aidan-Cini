@@ -1,4 +1,6 @@
 - expressions!
+    -> new ClassName
+    -> call me expressions
 - return statements
 - call statements
 - if statements

@@ -1,0 +1,14 @@
+(class main
+    (field num 0)
+    (field var 10)
+    (field some_var_that_refers_to_a_string "bar")
+    (method main ()
+        (begin
+            (set var (+ var 15))
+            (print "(num is 0 initially) num + 8 = 8: " (+ num 8))
+            (print "25:" var)
+            (set var (+ "foo" some_var_that_refers_to_a_string))
+            (print "foobar:" var)
+        )
+    ) 
+) 

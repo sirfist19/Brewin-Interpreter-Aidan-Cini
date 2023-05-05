@@ -21,19 +21,23 @@ if __name__ == "__main__":
                   "begin_test",
                   "input_num",
                   "input_str",
-                  "set_test"]
+                  "set_test",
+                  "expression_test1",
+                  "expression_test2_var"
+                  ]
     
     # run the interpreter
     file_path_base = '../Test_Brewin_Programs/'  # Replace with your file path
     #print("Type in the file you want to run")
+    print("==================")
     for path in test_paths:
         file_path = file_path_base + path
         src = to_src(file_path)
         #print("\n\n==================")
-        #print(f"Running {path}")
-        #print("==================")
+        
+        print(f"Running {path}")
         interpreter.run(src)
-        #print("==================\n\n")
+        print("==================")
 
     #file_name = input()
     #file_path = file_path_base + file_name
