@@ -1,0 +1,5 @@
+(class main
+    (method main ()
+        (print -4 0 "hello world!" 5 true)
+    ) # end of method',
+) # end of class'

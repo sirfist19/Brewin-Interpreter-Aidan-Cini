@@ -1,0 +1,6 @@
+(class main
+    (field num 0)
+    (method main () 
+        (print "The field is " num)
+    ) 
+) 

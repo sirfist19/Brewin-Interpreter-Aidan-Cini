@@ -1,0 +1,9 @@
+(class main
+    (field num 0)
+    (method main ()
+        (begin
+            (inputi num)
+            (print "Here is the number you typed in " num)
+        )
+    ) 
+) 

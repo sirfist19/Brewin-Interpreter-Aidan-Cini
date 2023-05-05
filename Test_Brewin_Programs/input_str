@@ -1,0 +1,9 @@
+(class main
+    (field s "")
+    (method main ()
+        (begin
+            (inputs s)
+            (print "Here is the string you typed in " s)
+        )
+    ) 
+) 

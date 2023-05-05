@@ -1,0 +1,8 @@
+(class main
+    (method main ()
+        (begin
+            (print "Hello")
+            (print "there")
+        )
+    ) 
+) 

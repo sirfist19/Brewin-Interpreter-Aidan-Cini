@@ -1,0 +1,9 @@
+(class main
+    (field num 0)
+    (method main ()
+        (begin
+            (set num 60)
+            (print "Num is " num)
+        )
+    ) 
+) 
