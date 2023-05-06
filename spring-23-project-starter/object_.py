@@ -88,7 +88,7 @@ class ObjectDef: # the instanciation of a class
         # bool function that checks to see if cur is an expression
         return (isinstance(cur, list) and cur[0] in exp_starts)
 
-    def __handle_expression(self, expression):
+    def __handle_expression(self, expression, interpreter):
         # returns the result of the computed expression!
         if len(expression) < 2:
             print("Expression length is not long enough. Needs to have at least an op and a value")
@@ -100,15 +100,16 @@ class ObjectDef: # the instanciation of a class
         
         # need to verify that a or b is not another list
         if self.is_expression(a):
-            a = self.__handle_expression(a)
+            a = self.__handle_expression(a, interpreter)
         if b and self.is_expression(b):
-            b = self.__handle_expression(b)
+            b = self.__handle_expression(b, interpreter)
         
         # check to see if a or b is a field or parameter STILL NEED TO ADD PARAMETER CHECKING HERE!!
         if a in self.fields:
             a = str(self.fields[a].value)
         if b in self.fields:
             b = str(self.fields[b].value)
+        # HANDLE IF A FIELD IS SPECIFIED BUT DOESN'T EXIST
 
         # if a or b is a number convert to an int
         if self.is_number(a):
@@ -131,10 +132,10 @@ class ObjectDef: # the instanciation of a class
         #print(self.is_string(b))
         #print(self.is_number(b))
         # op, a and b are now all valid
-        res = self.simple_calculate(a,b,op)
+        res = self.simple_calculate(a,b,op, interpreter)
         return res
         
-    def simple_calculate(self, a, b, op):
+    def simple_calculate(self, a, b, op, interpreter):
         one_op = (b == None)
         two_op = (a != None and b!= None)
         a_is_bool = isinstance(a, bool)
@@ -159,6 +160,7 @@ class ObjectDef: # the instanciation of a class
                     return a + b
                 else:
                     print("Unsupported operation between strings")
+                    interpreter.error("ErrorType.TYPE_ERROR")
             elif a_is_int and b_is_int:
                 if op == "+":
                     return a + b
@@ -185,6 +187,7 @@ class ObjectDef: # the instanciation of a class
                 else:
                     print(op, a, b)
                     print("Unsupported operation between ints")
+                    interpreter.error("ErrorType.TYPE_ERROR")
             elif a_is_bool and b_is_bool:
                 if op == "!=":
                     return a != b
@@ -196,9 +199,11 @@ class ObjectDef: # the instanciation of a class
                     return a or b
                 else:
                     print("Unsupported operation between bools")
+                    interpreter.error("ErrorType.TYPE_ERROR")
             else:
                 print(a)
                 print(b)
+                interpreter.error("ErrorType.TYPE_ERROR")
                 print("Expression: The type of a and b is not consistent")
         else:
             return "Expression ERROR, operation not supported"
@@ -211,7 +216,7 @@ class ObjectDef: # the instanciation of a class
                 cur = arg.strip('\'')
             
             if self.is_expression(cur):
-                res = self.__handle_expression(cur)
+                res = self.__handle_expression(cur, interpreter)
                 if isinstance(res, bool):
                     if res:
                         res = "true"
@@ -248,7 +253,7 @@ class ObjectDef: # the instanciation of a class
             self.__run_statement(statement, interpreter)
         return True
     
-    def __execute_set(self, statement):
+    def __execute_set(self, statement, interpreter):
         var_name, value_to_set = statement.args[0], statement.args[1]
 
         # if value_to_set is null then set it to None
@@ -257,7 +262,7 @@ class ObjectDef: # the instanciation of a class
 
         # if value_to_set is an expression evaluate it!
         if self.is_expression(value_to_set):
-            value_to_set = self.__handle_expression(value_to_set)
+            value_to_set = self.__handle_expression(value_to_set, interpreter)
             if isinstance(value_to_set, bool):
                 if value_to_set:
                     value_to_set = "true"
@@ -294,29 +299,49 @@ class ObjectDef: # the instanciation of a class
         #print("Else clause: ", else_clause)
 
         # handle the expression
-        expression_val = expression
-        if self.is_expression(expression):
-            expression_val = self.__handle_expression(expression)
-        if expression_val == "true":
-            expression_val = True
-        elif expression_val == "false":
-            expression_val = False
+        expression_val = self.__execute_expession(expression, interpreter)
 
         # return the statement specified by the result of the expression
-        if expression_val == True: 
+        if expression_val == True and isinstance(expression_val, bool): 
             if_clause = StatementDef(if_clause)
             self.__run_statement(if_clause, interpreter) # execute if_clause
-        elif expression_val == False:
+        elif expression_val == False and isinstance(expression_val, bool):
             if else_clause != None:
                 else_clause = StatementDef(else_clause)
                 self.__run_statement(else_clause, interpreter) # execute else_clause
         else:
+            interpreter.error("ErrorType.TYPE_ERROR")
             print("ERROR: If Expression did not result in a Boolean")
     
-    def __execute_while(statement, interpreter):
-        print("Executing a while statement!")
-        pass
+    def __execute_while(self, statement, interpreter):
+        # Syntax
+        # (while expression statement_to_run_while_expression_is_true)
+        # ['while', [expression], [statement_to_run_while_expression_is_true]]
+        
+        condition = statement.args[0]
+        statement_to_run = StatementDef(statement.args[1])
 
+        while True:
+            res = self.__execute_expession(condition, interpreter) #execute the condition
+            if res == True and isinstance(res, bool):
+                # run the statement
+                self.__run_statement(statement_to_run, interpreter) # execute if_clause
+            elif res == False and isinstance(res, bool):
+                break # exit the while loop
+            else:
+                interpreter.error("ErrorType.TYPE_ERROR")
+                print("ERROR: Expression in while loop did not result in a Boolean")
+    
+    def __execute_expession(self, expression, interpreter):
+        expression_val = expression
+        if self.is_expression(expression):
+            expression_val = self.__handle_expression(expression, interpreter)
+        if expression_val == "true":
+            expression_val = True
+        elif expression_val == "false":
+            expression_val = False
+        return expression_val
+    
     # runs/interprets the passed-in statement until completion and gets the result, if any
     def __run_statement(self, statement, interpreter):
         if statement.statement_type == StatementType.PRINT:
@@ -336,7 +361,7 @@ class ObjectDef: # the instanciation of a class
         elif statement.statement_type == StatementType.IF:
             return self.__execute_if(statement, interpreter)
         elif statement.statement_type == StatementType.SET:
-            return self.__execute_set(statement)
+            return self.__execute_set(statement, interpreter)
         return False
         
         '''

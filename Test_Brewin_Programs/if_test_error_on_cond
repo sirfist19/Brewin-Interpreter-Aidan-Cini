@@ -1,0 +1,11 @@
+(class main
+    (field x 5)
+    (method main ()
+        (begin
+            (if (% x 2)
+                (print "x")
+                (print "y") # else clause
+            )
+        )
+    )
+)

@@ -25,7 +25,8 @@ if __name__ == "__main__":
                   "expression_test1",
                   "expression_test2_var",
                   "if_test_spec",
-                  "null_test"
+                  "null_test",
+                  "while_test"
                   ]
     
     # run the interpreter
