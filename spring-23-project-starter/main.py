@@ -23,7 +23,9 @@ if __name__ == "__main__":
                   "input_str",
                   "set_test",
                   "expression_test1",
-                  "expression_test2_var"
+                  "expression_test2_var",
+                  "if_test_spec",
+                  "null_test"
                   ]
     
     # run the interpreter

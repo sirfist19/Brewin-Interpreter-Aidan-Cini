@@ -43,7 +43,7 @@ class StatementDef:
         self.statement_type = statement_type
         self.args = args 
 
-    def create_statement(self, statement_data):
+    def create_statement(self, statement_data): # statement data is the list of everything that will be the statement
         if statement_data[0] == InterpreterBase.PRINT_DEF:
             #handle print statement
             return (StatementType.PRINT, statement_data[1:])

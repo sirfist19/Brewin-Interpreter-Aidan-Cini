@@ -1,6 +1,6 @@
 #from bparser import *
 #from intbase import *
-from fundamental_defs import ValueDef, StatementType
+from fundamental_defs import ValueDef, StatementType, StatementDef
 
 class ObjectDef: # the instanciation of a class
     def __init__(self, name):
@@ -17,8 +17,8 @@ class ObjectDef: # the instanciation of a class
     def __find_method(self, method_name):
         return self.methods[method_name] # returns the method itself
 
-    def __find_field(self, field_name):
-        return self.fields[field_name] # returns the value of the field
+    #def __find_field(self, field_name):
+    #    return self.fields[field_name] # returns the value of the field
     
     # Interpret the specified method using the provided parameters
     #def call_method(self, method_name, parameters):
@@ -84,7 +84,7 @@ class ObjectDef: # the instanciation of a class
         exp_starts = {'+', '-', '*', '/', 
                       '>','<','==','!=', 
                       '>=', '<=', '&', '|'
-                      ,'!'}
+                      ,'!', '%'}
         # bool function that checks to see if cur is an expression
         return (isinstance(cur, list) and cur[0] in exp_starts)
 
@@ -178,6 +178,10 @@ class ObjectDef: # the instanciation of a class
                     return a>=b
                 elif op == "==":
                     return a == b
+                elif op == "!=":
+                    return a != b
+                elif op == "%":
+                    return a % b
                 else:
                     print(op, a, b)
                     print("Unsupported operation between ints")
@@ -246,7 +250,11 @@ class ObjectDef: # the instanciation of a class
     
     def __execute_set(self, statement):
         var_name, value_to_set = statement.args[0], statement.args[1]
-        
+
+        # if value_to_set is null then set it to None
+        if value_to_set == "null":
+            value_to_set = None
+
         # if value_to_set is an expression evaluate it!
         if self.is_expression(value_to_set):
             value_to_set = self.__handle_expression(value_to_set)
@@ -264,6 +272,51 @@ class ObjectDef: # the instanciation of a class
         # elif a parameter
         return False
     
+    def __execute_if(self, statement, interpreter):
+        # Overall Brewin' syntax
+        # if with no else
+        # (if expression (run_if_expr_is_true)) 
+        # ['if', ['==', 'x', '7'], ['print', '"lucky seven"']]
+
+        # if with else
+        # (if expression (run_if_expr_is_true) (run_if_expr_is_false))
+        # ['if', 'true', ['print', '"that\'s true"'], ['print', '"this won\'t print"']]
+        #print("Evaluating if statement!")
+
+        expression = statement.args[0] # statement.args should be [expression,if_clause, else_clause]
+        if_clause = statement.args[1]
+        else_clause = None
+        if len(statement.args) >= 3:
+            else_clause = statement.args[2]
+        
+        #print("Expression: ", expression)
+        #print("If clause: ", if_clause)
+        #print("Else clause: ", else_clause)
+
+        # handle the expression
+        expression_val = expression
+        if self.is_expression(expression):
+            expression_val = self.__handle_expression(expression)
+        if expression_val == "true":
+            expression_val = True
+        elif expression_val == "false":
+            expression_val = False
+
+        # return the statement specified by the result of the expression
+        if expression_val == True: 
+            if_clause = StatementDef(if_clause)
+            self.__run_statement(if_clause, interpreter) # execute if_clause
+        elif expression_val == False:
+            if else_clause != None:
+                else_clause = StatementDef(else_clause)
+                self.__run_statement(else_clause, interpreter) # execute else_clause
+        else:
+            print("ERROR: If Expression did not result in a Boolean")
+    
+    def __execute_while(statement, interpreter):
+        print("Executing a while statement!")
+        pass
+
     # runs/interprets the passed-in statement until completion and gets the result, if any
     def __run_statement(self, statement, interpreter):
         if statement.statement_type == StatementType.PRINT:
@@ -273,7 +326,7 @@ class ObjectDef: # the instanciation of a class
         elif statement.statement_type == StatementType.CALL:
             return True
         elif statement.statement_type == StatementType.WHILE:
-            return True
+            return self.__execute_while(statement, interpreter)
         elif statement.statement_type == StatementType.RETURN:
             return True
         elif statement.statement_type == StatementType.INPUTI:
@@ -281,7 +334,7 @@ class ObjectDef: # the instanciation of a class
         elif statement.statement_type == StatementType.INPUTS:
             return self.__execute_inputs(statement, interpreter)
         elif statement.statement_type == StatementType.IF:
-            return True
+            return self.__execute_if(statement, interpreter)
         elif statement.statement_type == StatementType.SET:
             return self.__execute_set(statement)
         return False

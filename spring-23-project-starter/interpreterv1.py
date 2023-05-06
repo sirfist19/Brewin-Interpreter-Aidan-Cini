@@ -50,6 +50,8 @@ class Interpreter(InterpreterBase):
                     if class_def[i][0] == InterpreterBase.FIELD_DEF:
                         # handle a field
                         name, value_no_type = class_def[i][1], class_def[i][2]
+                        if value_no_type == "null":
+                            value_no_type = None
                         value = ValueDef(type(value_no_type), value_no_type)
                         cur_field = VariableDef(name, value)
                         #print("Adding a field")

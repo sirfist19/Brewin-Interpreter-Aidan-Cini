@@ -1,0 +1,12 @@
+(class main
+    (field x null)
+    (field t true)
+    (field f false)
+    (field temp 5)
+    (method main ()
+        (begin
+            (set temp null)
+            (print x t f temp)
+        )
+    )
+)

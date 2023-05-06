@@ -1,10 +1,12 @@
-- expressions!
+- expressions! DONE
     -> new ClassName
     -> call me expressions
+- if statements DONE
+- while statements WORKING ON
 - return statements
 - call statements
-- if statements
-- while statements
+
+- ERROR handling via the spec (go through each section and make sure you are catching errors like they want)
 
 - additional methods
 - additional classes
