@@ -1,0 +1,17 @@
+(class main
+  (field x 0)
+  (method main ()
+    (begin
+      (print x) # prints 0
+      (call me sets 1 2 3)
+    )
+  )
+  (method sets (x y z)
+    (begin
+      (print x y z) # prints 1
+      (set x (+ x y))
+      (set z (* z 5))
+      (print x y z)
+    )
+  )
+)

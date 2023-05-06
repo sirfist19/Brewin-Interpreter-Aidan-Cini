@@ -1,5 +1,5 @@
-#from bparser import *
-#from intbase import *
+from bparser import *
+from intbase import *
 from fundamental_defs import ValueDef, StatementType, StatementDef
 
 class ObjectDef: # the instanciation of a class
@@ -15,29 +15,28 @@ class ObjectDef: # the instanciation of a class
         self.fields[field_name] = field_value
 
     def __find_method(self, method_name):
-        return self.methods[method_name] # returns the method itself
-
-    #def __find_field(self, field_name):
-    #    return self.fields[field_name] # returns the value of the field
-    
-    # Interpret the specified method using the provided parameters
-    #def call_method(self, method_name, parameters):
-    #    method = self.__find_method(method_name)
-    #    statement = method.get_top_level_statement()
-    #    result = self.__run_statement(statement)
-    #    return result
+        if method_name in self.methods:
+            return self.methods[method_name] # returns the method itself
+        return None
     
     # runs the method (currently SIMPLISTIC)
-    def run_method(self, method_name, interpreter):
+    def run_method(self, method_name, param_values, interpreter):
         method = self.__find_method(method_name)
-        #statement = method.get_top_level_statement()
-        result = self.__run_statement(method.statement, interpreter)
-        return result 
+
+        if method:
+            if len(param_values) != len(method.param_map.keys()):
+                print("Wrong number of args provided to fxn call")
+                interpreter.error(ErrorType.TYPE_ERROR)
+            method.set_method_values(param_values)
+            result = self.__run_statement(method.statement, method.param_map, interpreter)
+            return result 
+        else:
+            print("Cannot find function to run!")
+            interpreter.error(ErrorType.NAME_ERROR)
     
-    def __execute_inputs(self, statement, interpreter):
+    def __execute_inputs(self, statement, params, interpreter):
         #get string input
         temp = interpreter.get_input()
-        #temp = input()
         if not self.is_string(temp):
             print("Not instance of a string inputed to inputs")
         
@@ -45,13 +44,15 @@ class ObjectDef: # the instanciation of a class
 
         # the input_var_name could be a fxn param or a field name
 
-        # for Field name
-        if input_var_name in self.fields: # if the field name exists then set the field to that value
+        # for Field name and parameters
+        if input_var_name in params:
+            params[input_var_name] = temp
+        elif input_var_name in self.fields: # if the field name exists then set the field to that value
             self.fields[input_var_name] = ValueDef(type(temp), temp)
             return True
         return False
 
-    def __execute_inputi(self, statement, interpreter):
+    def __execute_inputi(self, statement, params, interpreter):
         #get string input
         temp = interpreter.get_input()
         #temp = input()
@@ -63,8 +64,10 @@ class ObjectDef: # the instanciation of a class
 
         # the input_var_name could be a fxn param or a field name
 
-        # for Field name
-        if input_var_name in self.fields: # if the field name exists then set the field to that value
+        # for Field and parameters 
+        if input_var_name in params:
+            params[input_var_name] = temp
+        elif input_var_name in self.fields: # if the field name exists then set the field to that value
             self.fields[input_var_name] = ValueDef(type(temp), temp)
             return True
         return False
@@ -88,7 +91,7 @@ class ObjectDef: # the instanciation of a class
         # bool function that checks to see if cur is an expression
         return (isinstance(cur, list) and cur[0] in exp_starts)
 
-    def __handle_expression(self, expression, interpreter):
+    def __handle_expression(self, expression, params, interpreter):
         # returns the result of the computed expression!
         if len(expression) < 2:
             print("Expression length is not long enough. Needs to have at least an op and a value")
@@ -100,15 +103,19 @@ class ObjectDef: # the instanciation of a class
         
         # need to verify that a or b is not another list
         if self.is_expression(a):
-            a = self.__handle_expression(a, interpreter)
+            a = self.__handle_expression(a, params, interpreter)
         if b and self.is_expression(b):
-            b = self.__handle_expression(b, interpreter)
+            b = self.__handle_expression(b, params, interpreter)
         
-        # check to see if a or b is a field or parameter STILL NEED TO ADD PARAMETER CHECKING HERE!!
+        # check to see if a or b is a field or parameter 
+        if a in params:
+            a = params[a]
+        if b in params:
+            b = params[b]
         if a in self.fields:
-            a = str(self.fields[a].value)
+            a = self.fields[a].value
         if b in self.fields:
-            b = str(self.fields[b].value)
+            b = self.fields[b].value
         # HANDLE IF A FIELD IS SPECIFIED BUT DOESN'T EXIST
 
         # if a or b is a number convert to an int
@@ -126,6 +133,11 @@ class ObjectDef: # the instanciation of a class
             b = True
         if b == "false":
             b = False
+        if a == "null":
+            a = None
+        if b == "null":
+            b = None
+
         #print("OPAB: ",op, a, b)
         #print(self.is_string(a))
         #print(self.is_number(a))
@@ -144,6 +156,21 @@ class ObjectDef: # the instanciation of a class
         b_is_int = (isinstance(b, int) and not b_is_bool)
         a_is_string = self.is_string(a)
         b_is_string = self.is_string(b)
+        #print(a, b, type(a), a == 'None', a == "None")
+        a_is_none = (a == None)
+        #a_isn_none = (a != None)
+        b_is_none = (b == None)
+            
+        #print("AB: ",op, a, b, a_is_none, b_is_none)
+        if a_is_none and b_is_none:
+                if op == "==":
+                    #print("cmp nulls", a, b)
+                    return a == b
+                elif op == "!=":
+                    return a != b
+                else:
+                    print("Unsupported operation between nulls")
+                    interpreter.error("ErrorType.TYPE_ERROR")
 
         if one_op:
             if op == "!":
@@ -153,6 +180,7 @@ class ObjectDef: # the instanciation of a class
                     print(a)
                     print("Error with the not operator")
         elif two_op:
+            
             if a_is_string and b_is_string:
                 a = a.strip('"')
                 b = b.strip('"')
@@ -208,15 +236,16 @@ class ObjectDef: # the instanciation of a class
         else:
             return "Expression ERROR, operation not supported"
 
-    def __execute_print(self, statement, interpreter):
+    def __execute_print(self, statement, params, interpreter):
         to_print = ""
+        
         for arg in statement.args:
             cur = arg
             if not isinstance(arg, list):
                 cur = arg.strip('\'')
             
             if self.is_expression(cur):
-                res = self.__handle_expression(cur, interpreter)
+                res = self.__handle_expression(cur, params, interpreter)
                 if isinstance(res, bool):
                     if res:
                         res = "true"
@@ -234,6 +263,9 @@ class ObjectDef: # the instanciation of a class
             elif cur == "true" or cur == "false":
                 #print("DEBUG:Is a bool")
                 to_print += cur
+            elif cur in params:
+                #print("Param_map: ", params)
+                to_print += str(params[cur])
             elif cur in self.fields:
                 #print("DEBUG:Is a field.")
                 to_print += str(self.fields[cur].value)
@@ -244,16 +276,16 @@ class ObjectDef: # the instanciation of a class
         #print(to_print)
         return True
     
-    def __execute_begin(self, statement, interpreter):
+    def __execute_begin(self, statement, params, interpreter):
         sub_statements = statement.args
         if len(sub_statements) == 0:
             print("ERROR: Cannot have an empty begin statement.")
             #exit(1)
         for statement in sub_statements:
-            self.__run_statement(statement, interpreter)
+            self.__run_statement(statement, params, interpreter)
         return True
     
-    def __execute_set(self, statement, interpreter):
+    def __execute_set(self, statement, params, interpreter):
         var_name, value_to_set = statement.args[0], statement.args[1]
 
         # if value_to_set is null then set it to None
@@ -262,7 +294,7 @@ class ObjectDef: # the instanciation of a class
 
         # if value_to_set is an expression evaluate it!
         if self.is_expression(value_to_set):
-            value_to_set = self.__handle_expression(value_to_set, interpreter)
+            value_to_set = self.__handle_expression(value_to_set, params, interpreter)
             if isinstance(value_to_set, bool):
                 if value_to_set:
                     value_to_set = "true"
@@ -270,14 +302,17 @@ class ObjectDef: # the instanciation of a class
                     value_to_set = "false"
 
         # the variable to set could be in either self.fields or a parameter
+        # if a parameter
+        if var_name in params:
+            params[var_name] = value_to_set
         # if a field
-        if var_name in self.fields:
+        elif var_name in self.fields:
             self.fields[var_name] = ValueDef(type(value_to_set), value_to_set)
             return True
         # elif a parameter
         return False
     
-    def __execute_if(self, statement, interpreter):
+    def __execute_if(self, statement, params, interpreter):
         # Overall Brewin' syntax
         # if with no else
         # (if expression (run_if_expr_is_true)) 
@@ -299,21 +334,21 @@ class ObjectDef: # the instanciation of a class
         #print("Else clause: ", else_clause)
 
         # handle the expression
-        expression_val = self.__execute_expession(expression, interpreter)
+        expression_val = self.__execute_expession(expression, params, interpreter)
 
         # return the statement specified by the result of the expression
         if expression_val == True and isinstance(expression_val, bool): 
             if_clause = StatementDef(if_clause)
-            self.__run_statement(if_clause, interpreter) # execute if_clause
+            self.__run_statement(if_clause, params, interpreter) # execute if_clause
         elif expression_val == False and isinstance(expression_val, bool):
             if else_clause != None:
                 else_clause = StatementDef(else_clause)
-                self.__run_statement(else_clause, interpreter) # execute else_clause
+                self.__run_statement(else_clause, params, interpreter) # execute else_clause
         else:
             interpreter.error("ErrorType.TYPE_ERROR")
             print("ERROR: If Expression did not result in a Boolean")
     
-    def __execute_while(self, statement, interpreter):
+    def __execute_while(self, statement, params, interpreter):
         # Syntax
         # (while expression statement_to_run_while_expression_is_true)
         # ['while', [expression], [statement_to_run_while_expression_is_true]]
@@ -322,65 +357,62 @@ class ObjectDef: # the instanciation of a class
         statement_to_run = StatementDef(statement.args[1])
 
         while True:
-            res = self.__execute_expession(condition, interpreter) #execute the condition
+            res = self.__execute_expession(condition, params, interpreter) #execute the condition
             if res == True and isinstance(res, bool):
                 # run the statement
-                self.__run_statement(statement_to_run, interpreter) # execute if_clause
+                self.__run_statement(statement_to_run, params, interpreter) # execute if_clause
             elif res == False and isinstance(res, bool):
                 break # exit the while loop
             else:
                 interpreter.error("ErrorType.TYPE_ERROR")
                 print("ERROR: Expression in while loop did not result in a Boolean")
     
-    def __execute_expession(self, expression, interpreter):
+    def __execute_expession(self, expression, params, interpreter):
         expression_val = expression
         if self.is_expression(expression):
-            expression_val = self.__handle_expression(expression, interpreter)
+            expression_val = self.__handle_expression(expression, params, interpreter)
         if expression_val == "true":
             expression_val = True
         elif expression_val == "false":
             expression_val = False
         return expression_val
     
+    def __execute_call(self, statement, params, interpreter):
+        #print("Parsing a call statement")
+        # Syntax
+        # (call target_object method_name param1 ... paramn)
+        # Ex: (call me bar 5)
+        obj_to_call = statement.args[0]
+        func_to_call = statement.args[1]
+        params = []
+        if len(statement.args) > 2:
+            params = statement.args[2:]
+        
+        if obj_to_call == InterpreterBase.ME_DEF:
+            self.run_method(func_to_call, params, interpreter)
+        else:
+            print("Object to call function on not found or the object is null!")
+            interpreter.error(ErrorType.FAULT_ERROR) 
+        
+
     # runs/interprets the passed-in statement until completion and gets the result, if any
-    def __run_statement(self, statement, interpreter):
+    def __run_statement(self, statement, params, interpreter):
         if statement.statement_type == StatementType.PRINT:
-            return self.__execute_print(statement, interpreter)
+            return self.__execute_print(statement, params, interpreter)
         elif statement.statement_type == StatementType.BEGIN:
-            return self.__execute_begin(statement, interpreter)
+            return self.__execute_begin(statement, params, interpreter)
         elif statement.statement_type == StatementType.CALL:
-            return True
+            return self.__execute_call(statement, params, interpreter)
         elif statement.statement_type == StatementType.WHILE:
-            return self.__execute_while(statement, interpreter)
+            return self.__execute_while(statement, params, interpreter)
         elif statement.statement_type == StatementType.RETURN:
             return True
         elif statement.statement_type == StatementType.INPUTI:
-            return self.__execute_inputi(statement, interpreter)
+            return self.__execute_inputi(statement, params, interpreter)
         elif statement.statement_type == StatementType.INPUTS:
-            return self.__execute_inputs(statement, interpreter)
+            return self.__execute_inputs(statement, params, interpreter)
         elif statement.statement_type == StatementType.IF:
-            return self.__execute_if(statement, interpreter)
+            return self.__execute_if(statement, params, interpreter)
         elif statement.statement_type == StatementType.SET:
-            return self.__execute_set(statement, interpreter)
+            return self.__execute_set(statement, params, interpreter)
         return False
-        
-        '''
-            Pseudocode from the spec
-        
-        if is_a_print_statement(statement):
-            result = self.__execute_print_statement(statement)
-        elif is_an_input_statement(statement):
-            result = self.__execute_input_statement(statement)
-        elif is_a_call_statement(statement):
-            result = self.__execute_call_statement(statement)
-        elif is_a_while_statement(statement):
-            result = self.__execute_while_statement(statement)
-        elif is_an_if_statement(statement):
-            result = self.__execute_if_statement(statement)
-        elif is_a_return_statement(statement):
-            result = self.__execute_return_statement(statement)
-        elif is_a_begin_statement(statement):
-            result = self.__execute_all_sub_statements_of_begin_statement(statement)
-        #...
-        return result
-        '''

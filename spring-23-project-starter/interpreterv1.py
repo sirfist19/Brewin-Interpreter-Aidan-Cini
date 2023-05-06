@@ -25,22 +25,23 @@ class Interpreter(InterpreterBase):
         # now that the program is correctly parsed
         # INTERPRET THE PROGRAM 
         print(f'HERE IS THE PARSED PROGRAM: \n{parsed_program}')
-        #self.__discover_all_classes_and_track_them(parsed_program)
         self.define_fundamentals(parsed_program)
             #print(self.classes)
         main_class = self.__find_definition_for_class("main")
 
         obj = main_class.instantiate_object()
-            #print("=========== OUTPUT! =========")
+
+        #for method in obj.methods:
+        #    print(method)
+
         interpreter = self
-        obj.run_method("main", interpreter)
+        obj.run_method("main", [], interpreter) # run main with no args
 
     def define_fundamentals(self, parsed_program):
         for class_def in parsed_program:
             # class_def should have format ['class', 'main', [method ...]]
             if class_def[0] != InterpreterBase.CLASS_DEF:
                 print("Error! Not in a class: ", class_def[0])
-                #exit(1)
 
             class_name = class_def[1]
             cur_class = ClassDef(class_name)
@@ -63,11 +64,12 @@ class Interpreter(InterpreterBase):
                         # handle a method
                         cur_method = class_def[i]
                         name, params, statement_data = cur_method[1], cur_method[2], cur_method[3]
+                        param_map = {x:None for x in params}
                         statement = StatementDef(statement_data) # statement data holds the type of statement and the args
-                        cur_method = MethodDef(name, params, statement)
+                        cur_method = MethodDef(name, param_map, statement)
                         
                         #print("Adding a method")
-                        #print(f'Name: {name}, Params: {params}, Statement: {statement.statement_type, statement.args}')
+                        #print(f'Name: {name}, Params: {param_map}, Statement: {statement.statement_type, statement.args}')
                         cur_class.add_method(cur_method)
                     else:
                         print("Error: Unknown list start within class")

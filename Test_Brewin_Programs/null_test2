@@ -1,0 +1,19 @@
+(class main
+    (field x null)
+    (method main ()
+        (begin
+            (print "x is null: true" (== x null))
+            (print "null is not null: false" (!= null null))
+            (print "null is null: true" (== null null))
+            (print "x is not null: false" (!= null x))
+            (call me cmp_null 0)
+        )
+    )
+    (method cmp_null (a)
+        (begin
+            (set a null)
+            #(print a)
+            (print "Is a equal to null: " (== a x))
+        )
+    )
+)

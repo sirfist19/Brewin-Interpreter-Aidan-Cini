@@ -2,13 +2,15 @@
     -> new ClassName
     -> call me expressions
 - if statements DONE
-- while statements WORKING ON
+- while statements DONE
 - return statements
-- call statements
+- call statements DONE 
+    -> still need call statements on other classes! NOT DONE
 
 - ERROR handling via the spec (go through each section and make sure you are catching errors like they want)
+    -> some DONE
 
-- additional methods
+- additional methods DONE
 - additional classes
 - adding the correct input and output methods from intbase
 

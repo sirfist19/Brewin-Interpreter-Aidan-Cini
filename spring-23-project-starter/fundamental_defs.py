@@ -70,14 +70,15 @@ class StatementDef:
         else:
             print("Unrecognized statement!")
             print(statement_data)
-            #exit(1)
 
 class MethodDef:
-    def __init__(self, name, parameters, statement):
+    def __init__(self, name, param_map, statement):
         self.name = name
-        self.parameters = parameters
+        self.param_map = param_map # of variable names to values -> initially all vars are set to None
         self.statement = statement
 
-class ExpressionDef: # NOT IMPLEMENTED YET
-    pass
-
+    def set_method_values(self, method_values):
+        # set the values of each of the items in the param map to the method_values by index
+        key_list = list(self.param_map.keys())
+        for i in range(len(method_values)):
+            self.param_map[key_list[i]] = method_values[i]

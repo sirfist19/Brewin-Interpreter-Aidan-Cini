@@ -1,0 +1,18 @@
+(class main
+  (field x 0)
+  (method main ()
+    (begin
+      (print x) # prints 0
+      (call me change_param 1)
+      (print x) # prints 0
+    )
+  )
+  (method change_param (x)
+    (begin
+      (print x) # prints 1
+      #(inputi x)
+      (set x 2)
+      (print x) # prints inputed number (2)
+    )
+  )
+)
