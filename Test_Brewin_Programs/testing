@@ -1,1 +1,11 @@
-
+(class main
+    (field x null)
+    (method main ()
+        (begin
+            #(set y 5)
+            #(print y)
+            (return (+ 5 y))
+        )
+        
+    ) 
+) 

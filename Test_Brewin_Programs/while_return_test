@@ -1,0 +1,29 @@
+# Our first Brewin program!
+(class main
+    # private member fields
+    (field num 0)
+    (field result 1)
+    # public methods
+    (method main ()
+        (begin
+            (print "Enter a number: ") # an output statement
+            (inputi num) # input an int
+            (print num " factorial is " (call me factorial num)) 
+        )
+    )
+    
+    (method factorial (n)
+        (begin
+            (set result 1)
+            (while (> n 0)
+                (begin
+                    (if (== n 5)
+                      (return -1))
+                    (set result (* n result))
+                    (set n (- n 1))
+                )
+            )
+            (return result)
+        )
+    )
+)

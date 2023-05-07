@@ -51,8 +51,8 @@ class ObjectDef: # the instanciation of a class
             params[input_var_name] = temp
         elif input_var_name in self.fields: # if the field name exists then set the field to that value
             self.fields[input_var_name] = ValueDef(type(temp), temp)
-            return True
-        return False
+            #return True
+        #return False
 
     def __execute_inputi(self, statement, params, interpreter):
         #get string input
@@ -71,8 +71,8 @@ class ObjectDef: # the instanciation of a class
             params[input_var_name] = temp
         elif input_var_name in self.fields: # if the field name exists then set the field to that value
             self.fields[input_var_name] = ValueDef(type(temp), temp)
-            return True
-        return False
+            #return True
+        #return False
     
     def is_number(self, cur):
         if not isinstance(cur, int) and \
@@ -130,11 +130,24 @@ class ObjectDef: # the instanciation of a class
                 a = params[a]
             if a in self.fields:
                 a = self.fields[a].value
+            elif not self.is_string(a) and \
+                not self.is_number(a) and \
+                a != None and \
+                a != True and a != False and a != "true" and a != "false" and a != "null":
+                print("unknown variable in expression", a)
+                interpreter.error(ErrorType.NAME_ERROR)
         if not isinstance(b, list):
             if b in params:
                 b = params[b]
-            if b in self.fields:
+            elif b in self.fields:
                 b = self.fields[b].value
+            elif not self.is_string(b) and \
+                not self.is_number(b) and \
+                b != None and \
+                b != True and b != False and b != "true" and b != "false" and b != "null":
+                print("unknown variable in expression", b)
+                interpreter.error(ErrorType.NAME_ERROR)
+
 
         # need to verify that a or b is not another list
         if self.is_expression(a):
@@ -192,7 +205,7 @@ class ObjectDef: # the instanciation of a class
                     return a != b
                 else:
                     print("Unsupported operation between nulls")
-                    interpreter.error("ErrorType.TYPE_ERROR")
+                    interpreter.error(ErrorType.TYPE_ERROR)
 
         if one_op:
             if op == "!":
@@ -209,7 +222,7 @@ class ObjectDef: # the instanciation of a class
                     return a + b
                 else:
                     print("Unsupported operation between strings")
-                    interpreter.error("ErrorType.TYPE_ERROR")
+                    interpreter.error(ErrorType.TYPE_ERROR)
             elif a_is_int and b_is_int:
                 if op == "+":
                     return a + b
@@ -311,10 +324,11 @@ class ObjectDef: # the instanciation of a class
                 to_print += cur
             else:  
                 print(f"ERROR: Unknown arg to print: {cur}", type(cur))
+                interpreter.error(ErrorType.NAME_ERROR)
                 #exit(1) 
         interpreter.output(to_print)
         #print(to_print)
-        return True
+        #return True
     
     def __execute_begin(self, statement, params, interpreter):
         sub_statements = statement.args
@@ -324,9 +338,11 @@ class ObjectDef: # the instanciation of a class
         res = None
         for statement in sub_statements:
             res = self.__run_statement(statement, params, interpreter)
-            if statement.statement_type == StatementType.RETURN:
+            #print("res1: ", res)
+            if res:
                 return res
-        return res # if there is nothing to return return none
+        #print("res2: ", res)
+        #return res # if there is nothing to return return none
     
     def __execute_set(self, statement, params, interpreter):
         var_name, value_to_set = statement.args[0], statement.args[1]
@@ -355,9 +371,11 @@ class ObjectDef: # the instanciation of a class
         # if a field
         elif var_name in self.fields:
             self.fields[var_name] = ValueDef(type(value_to_set), value_to_set)
-            return True
-        # elif a parameter
-        return False
+            #return True
+        else:
+            print("Setting an unknown variable")
+            interpreter.error(ErrorType.NAME_ERROR)
+        #return False
     
     def __execute_if(self, statement, params, interpreter):
         # Overall Brewin' syntax
@@ -403,15 +421,20 @@ class ObjectDef: # the instanciation of a class
         condition = statement.args[0]
         statement_to_run = StatementDef(statement.args[1])
 
-        while True:
+        while True: # NEED TO DEAL WITH RETURNS IN THE WHILE STATEMENT
             res = self.__execute_expession(condition, params, interpreter) #execute the condition
+            #print("Cond res: ", res)
+            #print("Fields: ", [(key,val.value) for key,val in self.fields.items()])
             if res == True and isinstance(res, bool):
                 # run the statement
-                return self.__run_statement(statement_to_run, params, interpreter) # execute if_clause
+                return_res = self.__run_statement(statement_to_run, params, interpreter) # execute if_clause
+                #print("Return res: ", return_res)
+                if return_res:
+                    return return_res
             elif res == False and isinstance(res, bool):
                 break # exit the while loop
             else:
-                interpreter.error("ErrorType.TYPE_ERROR")
+                interpreter.error(ErrorType.TYPE_ERROR)
                 print("ERROR: Expression in while loop did not result in a Boolean")
     
     def __execute_expession(self, expression, params, interpreter):
@@ -434,8 +457,15 @@ class ObjectDef: # the instanciation of a class
         elif expression_val == "false":
             expression_val = False
         elif isinstance(expression_val, str) and self.is_number(expression_val):
-            #print("%",expression_val)
             expression_val = int(expression_val)
+        elif isinstance(expression_val, int) \
+                or isinstance(expression_val, bool) \
+                or self.is_string(expression_val):
+            #print("Alt:", expression_val)
+            return expression_val
+        else:
+            print("error with expression value: ", expression_val)  
+            interpreter.error(ErrorType.NAME_ERROR)
         return expression_val
     
     def __execute_call(self, statement, old_params, interpreter):
@@ -444,7 +474,7 @@ class ObjectDef: # the instanciation of a class
         # (call target_object method_name param1 ... paramn)
         # Ex: (call me bar 5)
         obj_to_call_name = statement.args[0]
-        func_to_call = statement.args[1]
+        
         params = []
         if len(statement.args) > 2:
             params = statement.args[2:]
@@ -462,6 +492,7 @@ class ObjectDef: # the instanciation of a class
 
         # call me
         if obj_to_call_name == InterpreterBase.ME_DEF:
+            func_to_call = statement.args[1]
             res = self.run_method(func_to_call, params, interpreter)
             #print("From exec call: ", res)
             return res
@@ -470,6 +501,10 @@ class ObjectDef: # the instanciation of a class
             #print(name, obj_to_call_name)
             if name == obj_to_call_name:
                 obj_to_call = obj.value
+                if obj_to_call == None:
+                    print("Cannot call function on null object!")
+                    interpreter.error(ErrorType.FAULT_ERROR) 
+                func_to_call = statement.args[1]
                 return obj_to_call.run_method(func_to_call, params, interpreter)
         
         # if the object is not found in a field or is itself
@@ -510,4 +545,4 @@ class ObjectDef: # the instanciation of a class
         elif statement.statement_type == StatementType.SET:
             return self.__execute_set(statement, params, interpreter)
         print("Statement type error!")
-        return False
+        return None

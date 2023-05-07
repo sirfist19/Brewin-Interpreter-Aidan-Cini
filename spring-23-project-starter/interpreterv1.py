@@ -111,7 +111,7 @@ class Interpreter(InterpreterBase):
         found_class = self.classes[name]
         if not found_class:
             print(f"The class {name} could not be found in interpreter!")
-            self.error(ErrorType.FAULT_ERROR)
+            self.error(ErrorType.TYPE_ERROR)
         else:
             #print(f"Class found of name {name}")
             return self.classes[name]

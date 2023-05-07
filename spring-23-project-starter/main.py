@@ -36,7 +36,12 @@ if __name__ == "__main__":
                   "factorial",
                   "call_complex_test",
                   "pg14_test",
-                  "count_recursion"
+                  "count_recursion",
+                  "recursion1_test",
+                       "null_test3",
+                       "testing",
+                       "nested_calls_test",
+                       "while_return_test"
                   ]
     test_less_paths = ["two_method_test",
                        "input_param_test", 
@@ -52,13 +57,15 @@ if __name__ == "__main__":
                        "count_recursion",
                        "recursion1_test",
                        "null_test3",
-                       "nested_calls_test"
+                       "nested_calls_test",
+                       "testing",
                        ]
+    test_while = ["while_test", "while_return_test", "factorial_simple", "factorial"]
     # run the interpreter
     file_path_base = '../Test_Brewin_Programs/'  # Replace with your file path
     #print("Type in the file you want to run")
     print("==================")
-    for path in test_less_paths:
+    for path in test_paths:
         file_path = file_path_base + path
         src = to_src(file_path)
         #print("\n\n==================")
