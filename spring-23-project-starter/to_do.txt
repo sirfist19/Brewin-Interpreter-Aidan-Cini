@@ -12,6 +12,7 @@
 
 - additional methods DONE
 - additional classes
+    -> the new operator
 - adding the correct input and output methods from intbase
 
 

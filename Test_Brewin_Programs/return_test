@@ -1,0 +1,17 @@
+(class main
+    (field num 0)
+    (method main () 
+        (print (call me echo 5))
+    ) 
+    (method echo (a)
+        (return a) 
+    )
+) 
+
+# 1.the print statement executes the 
+#   call expression
+# 2.the call expression calls the 
+#   echo method
+# 3.the echo method returns a value
+# 4.and that value is what the call
+#   expression evaluates to

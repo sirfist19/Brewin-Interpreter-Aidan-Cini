@@ -1,0 +1,23 @@
+(class main
+    (field num 0)
+    (method main () 
+        (begin
+            (print "0:" (call me print_num))
+            (set num (new math))
+            (print "5+6 = 11: " (call num add 5 6))
+            (print "5*6 = 30: " (call num mult 5 6))
+            (print "Obj: " (call me print_num))
+        )
+    ) 
+    (method print_num ()
+        (return num) 
+    )
+) 
+(class math
+    (method add (a b)
+        (return (+ a b))
+    )
+    (method mult (a b)
+        (return (* a b))
+    )
+)

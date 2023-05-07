@@ -27,7 +27,7 @@ class Interpreter(InterpreterBase):
         print(f'HERE IS THE PARSED PROGRAM: \n{parsed_program}')
         self.define_fundamentals(parsed_program)
             #print(self.classes)
-        main_class = self.__find_definition_for_class("main")
+        main_class = self.find_definition_for_class("main")
 
         obj = main_class.instantiate_object()
 
@@ -79,7 +79,8 @@ class Interpreter(InterpreterBase):
             # add the current class to the list
                 #print("Adding a class")
             self.classes[cur_class.name] = cur_class
-
+        #for class_name, class_ in self.classes.items():
+        #    print(class_name, class_)
     # print all of the line numbers for all tokens in parsed program
     def print_line_nums(self, parsed_program):
         for item in parsed_program:
@@ -88,11 +89,11 @@ class Interpreter(InterpreterBase):
             else:
                 self.print_line_nums(item)
 
-    def __find_definition_for_class(self, name):
+    def find_definition_for_class(self, name):
         found_class = self.classes[name]
         if not found_class:
-            print("Class could not be found!")
-            return None
+            print(f"The class {name} could not be found in interpreter!")
+            self.error(ErrorType.FAULT_ERROR)
         else:
             #print(f"Class found of name {name}")
             return self.classes[name]
