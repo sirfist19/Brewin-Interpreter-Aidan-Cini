@@ -65,7 +65,7 @@ class Interpreter(InterpreterBase):
                             print("duplicate field: ", name)
                             self.error(ErrorType.NAME_ERROR)
 
-                        if value_no_type == "null":
+                        if value_no_type == InterpreterBase.NULL_DEF:
                             value_no_type = None
                         value = ValueDef(type(value_no_type), value_no_type)
                         cur_field = VariableDef(name, value)

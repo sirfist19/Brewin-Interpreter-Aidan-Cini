@@ -32,6 +32,10 @@ class StatementType(Enum):
     WHILE = 8
     RETURN = 9
 
+class NullType(): # to return from (return)
+        def __init__(self):
+            self.value = None
+
 class StatementDef:
     # if, begin, print, set, inputi, inputs, call, while, return
     #def __init__(self, statement_type, args):
