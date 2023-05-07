@@ -38,12 +38,20 @@ class Interpreter(InterpreterBase):
         obj.run_method("main", [], interpreter) # run main with no args
 
     def define_fundamentals(self, parsed_program):
+        # for each class in the program ... parse the class and add it to the interpreter classes
+        
         for class_def in parsed_program:
             # class_def should have format ['class', 'main', [method ...]]
             if class_def[0] != InterpreterBase.CLASS_DEF:
                 print("Error! Not in a class: ", class_def[0])
 
             class_name = class_def[1]
+
+            # handle duplicate classes when the name is already set
+            if class_name in self.classes: 
+                print("duplicate class: ", class_name, self.classes)
+                self.error(ErrorType.TYPE_ERROR)
+
             cur_class = ClassDef(class_name)
             for i in range(2,len(class_def)):
                 if type(class_def[i]) == list:
@@ -51,12 +59,16 @@ class Interpreter(InterpreterBase):
                     if class_def[i][0] == InterpreterBase.FIELD_DEF:
                         # handle a field
                         name, value_no_type = class_def[i][1], class_def[i][2]
+
+                        # handle a duplicate field
+                        if name in cur_class.fields:
+                            print("duplicate field: ", name)
+                            self.error(ErrorType.NAME_ERROR)
+
                         if value_no_type == "null":
                             value_no_type = None
                         value = ValueDef(type(value_no_type), value_no_type)
                         cur_field = VariableDef(name, value)
-                        #print("Adding a field")
-                        #print(f"Field name: {name}, Value: {value.type, value.value}\n")
                         cur_class.add_field(cur_field)
 
                     # if it is a method (first element is method)
@@ -64,6 +76,12 @@ class Interpreter(InterpreterBase):
                         # handle a method
                         cur_method = class_def[i]
                         name, params, statement_data = cur_method[1], cur_method[2], cur_method[3]
+                        
+                        # handle a duplicate method
+                        if name in cur_class.methods:
+                            print("duplicate method: ", name)
+                            self.error(ErrorType.NAME_ERROR)
+
                         param_map = {x:None for x in params}
                         statement = StatementDef(statement_data) # statement data holds the type of statement and the args
                         cur_method = MethodDef(name, param_map, statement)

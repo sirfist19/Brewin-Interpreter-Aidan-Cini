@@ -1,9 +1,9 @@
 - expressions! DONE
-    -> new ClassName
-    -> call me expressions
+    -> new ClassName DONE
+    -> call me expressions DONE
 - if statements DONE
 - while statements DONE
-- return statements
+- return statements DONE
 - call statements DONE 
     -> still need call statements on other classes! NOT DONE
 
@@ -11,10 +11,14 @@
     -> some DONE
 
 - additional methods DONE
-- additional classes
-    -> the new operator
+- additional classes DONE
+    -> the new operator DONE
 - adding the correct input and output methods from intbase
-
+- get factorial to work!
+- get call_complex_test to work
+- debug!
+- get other test cases from the spec
+- fix the rest of the incorrectness checks -> go through the spec for these
 
 - Run through the autograder!
 - Turn it in!

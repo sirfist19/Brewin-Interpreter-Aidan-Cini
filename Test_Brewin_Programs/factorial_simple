@@ -1,0 +1,20 @@
+(class main
+    # private member fields
+    (field num 0)
+    (field result 1)
+    # public methods
+    (method main ()
+        (begin
+            (print "Enter a number: ") # an output statement
+            (inputi num) # input an int
+            (set result 1)
+            (while (> num 0)
+                (begin
+                    (set result (* num result))
+                    (set num (- num 1))
+                )
+            )
+            (print " factorial is " result) 
+        )
+    )
+)

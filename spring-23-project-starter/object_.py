@@ -263,23 +263,33 @@ class ObjectDef: # the instanciation of a class
                 else:
                     res = str(res)
                 to_print += res
-            elif self.is_string(cur):
+                continue
+
+            from_param_or_field = False
+            if cur in params:
+                #print("Param_map: ", params)
+                cur = params[cur]
+                from_param_or_field = True
+            elif cur in self.fields:
+                #print("DEBUG:Field: ", cur, self.fields[cur].value)
+                cur = self.fields[cur].value
+                from_param_or_field = True
+            
+            if isinstance(cur, ObjectDef) :
+                to_print += str(cur)
+            elif cur == None and from_param_or_field:
+                to_print += str(cur)
+            elif self.is_string(cur) or (from_param_or_field and isinstance(cur, str)):
                 #print("DEBUG:IS A STRING")
                 to_print += cur.strip('"')
             elif self.is_number(cur): # if cur is an integer (positive or negative)
                 #print("DEBUG:Is a number!")
-                to_print += cur
+                to_print += str(cur)
             elif cur == "true" or cur == "false":
                 #print("DEBUG:Is a bool")
                 to_print += cur
-            elif cur in params:
-                #print("Param_map: ", params)
-                to_print += str(params[cur])
-            elif cur in self.fields:
-                #print("DEBUG:Is a field.")
-                to_print += str(self.fields[cur].value)
             else:  
-                print(f"ERROR: Unknown arg to print: {cur}")
+                print(f"ERROR: Unknown arg to print: {cur}", type(cur))
                 #exit(1) 
         interpreter.output(to_print)
         #print(to_print)
@@ -291,8 +301,10 @@ class ObjectDef: # the instanciation of a class
             print("ERROR: Cannot have an empty begin statement.")
             #exit(1)
         for statement in sub_statements:
-            self.__run_statement(statement, params, interpreter)
-        return True
+            res = self.__run_statement(statement, params, interpreter)
+            if statement.statement_type == StatementType.RETURN:
+                return res
+        return None # if there is nothing to return return none
     
     def __execute_set(self, statement, params, interpreter):
         var_name, value_to_set = statement.args[0], statement.args[1]
@@ -300,15 +312,19 @@ class ObjectDef: # the instanciation of a class
         # if value_to_set is null then set it to None
         if value_to_set == "null":
             value_to_set = None
-
         # if value_to_set is an expression evaluate it!
-        if self.is_expression(value_to_set):
+        elif self.is_expression(value_to_set):
             value_to_set = self.__handle_expression(value_to_set, params, interpreter)
             if isinstance(value_to_set, bool):
                 if value_to_set:
                     value_to_set = "true"
                 else:
                     value_to_set = "false"
+        # the value could refer to a field or parameter
+        elif value_to_set in params:
+            value_to_set = params[value_to_set]
+        elif value_to_set in self.fields:
+            value_to_set = self.fields[value_to_set].value
 
         # the variable to set could be in either self.fields or a parameter
         # if a parameter
@@ -384,6 +400,7 @@ class ObjectDef: # the instanciation of a class
             return params[expression]
         # if the expression is a field
         if not isinstance(expression, list) and expression in self.fields:
+            #print("REturning: ", self.fields[expression].value)
             return self.fields[expression].value
         # if the expression is not a constant and needs to be further evaluated
         if self.is_expression(expression):
@@ -441,8 +458,9 @@ class ObjectDef: # the instanciation of a class
         elif statement.statement_type == StatementType.WHILE:
             return self.__execute_while(statement, params, interpreter)
         elif statement.statement_type == StatementType.RETURN:
-            #print("exec return")
-            return self.__execute_return(statement, params, interpreter)
+            res = self.__execute_return(statement, params, interpreter)
+            #print("q: ", res)
+            return res
         elif statement.statement_type == StatementType.INPUTI:
             return self.__execute_inputi(statement, params, interpreter)
         elif statement.statement_type == StatementType.INPUTS:
@@ -451,4 +469,5 @@ class ObjectDef: # the instanciation of a class
             return self.__execute_if(statement, params, interpreter)
         elif statement.statement_type == StatementType.SET:
             return self.__execute_set(statement, params, interpreter)
+        print("Statement type error!")
         return False
