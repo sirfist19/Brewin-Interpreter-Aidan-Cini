@@ -1,0 +1,18 @@
+(class main
+    # private member fields
+    (field temp "")
+    (field some_var_that_refers_to_a_string "-bar-hello")
+    (field result 1)
+    (field var null)
+    # public methods
+    (method main ()
+        (begin
+            (print "Empty string equal to empty string: true." (== "" temp))
+            (print "true." (!= "apple" "Apple")) 
+            (print "true." (< "apple" "boop"))
+            (inputs some_var_that_refers_to_a_string)
+            (set var (+ "foo" some_var_that_refers_to_a_string))
+            (print var)
+        )
+    )
+)

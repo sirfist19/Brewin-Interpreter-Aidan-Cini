@@ -108,10 +108,8 @@ class Interpreter(InterpreterBase):
                 self.print_line_nums(item)
 
     def find_definition_for_class(self, name):
-        found_class = self.classes[name]
-        if not found_class:
+        if name not in self.classes:
             print(f"The class {name} could not be found in interpreter!")
             self.error(ErrorType.TYPE_ERROR)
-        else:
-            #print(f"Class found of name {name}")
-            return self.classes[name]
+        return self.classes[name]
+        

@@ -57,10 +57,12 @@ if __name__ == "__main__":
                        "count_recursion",
                        "recursion1_test",
                        "null_test3",
-                       "nested_calls_test",
-                       "testing",
+                       #"nested_calls_test",
+                       "testing"
                        ]
     test_while = ["while_test", "while_return_test", "factorial_simple", "factorial"]
+    test_str = ["str_op_test"]
+    test_incorrect = ["testing"]
     # run the interpreter
     file_path_base = '../Test_Brewin_Programs/'  # Replace with your file path
     #print("Type in the file you want to run")

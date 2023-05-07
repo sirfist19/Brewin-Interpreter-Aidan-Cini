@@ -4,8 +4,8 @@
         (begin
             #(set y 5)
             #(print y)
-            (return (+ 5 y))
+            #(return (+ 5 y))
+            (set x (new apple))
         )
-        
     ) 
 ) 

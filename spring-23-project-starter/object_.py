@@ -220,6 +220,18 @@ class ObjectDef: # the instanciation of a class
                 b = b.strip('"')
                 if op == "+": # concat
                     return a + b
+                elif op == "==":
+                    return a == b
+                elif op == "!=":
+                    return a != b
+                elif op == ">":
+                    return a > b
+                elif op == "<":
+                    return a < b
+                elif op == "<=":
+                    return a<=b
+                elif op == ">=":
+                    return a>=b
                 else:
                     print("Unsupported operation between strings")
                     interpreter.error(ErrorType.TYPE_ERROR)
