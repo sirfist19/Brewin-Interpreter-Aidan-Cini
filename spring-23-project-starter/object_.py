@@ -1,6 +1,7 @@
 from bparser import *
 from intbase import *
 from fundamental_defs import ValueDef, StatementType, StatementDef
+import copy
 
 class ObjectDef: # the instanciation of a class
     def __init__(self, name):
@@ -74,13 +75,18 @@ class ObjectDef: # the instanciation of a class
         return False
     
     def is_number(self, cur):
-        if cur == None or cur == True or cur == False:
+        if not isinstance(cur, int) and \
+                (cur == None or cur == True or cur == False):
             return False
         return isinstance(cur, int) or \
                 (cur.isdigit() or (cur[1:].isdigit() and cur[0] == '-'))
     
     def is_string(self, cur):
-        if cur == None or cur == True or cur == False or isinstance(cur, int):
+        if cur == None or \
+            cur == True or \
+                cur == False or \
+                    isinstance(cur, int) or \
+                        isinstance(cur, ObjectDef):
             return False
         return cur[0] == '\"' and cur[-1] == '\"'
     
@@ -118,27 +124,31 @@ class ObjectDef: # the instanciation of a class
         else:
             op, a, b = expression[0:3]
         
+        # check to see if a or b is a field or parameter 
+        if not isinstance(a, list):
+            if a in params:
+                a = params[a]
+            if a in self.fields:
+                a = self.fields[a].value
+        if not isinstance(b, list):
+            if b in params:
+                b = params[b]
+            if b in self.fields:
+                b = self.fields[b].value
+
         # need to verify that a or b is not another list
         if self.is_expression(a):
             a = self.__handle_expression(a, params, interpreter)
         if b and self.is_expression(b):
             b = self.__handle_expression(b, params, interpreter)
         
-        # check to see if a or b is a field or parameter 
-        if a in params:
-            a = params[a]
-        if b in params:
-            b = params[b]
-        if a in self.fields:
-            a = self.fields[a].value
-        if b in self.fields:
-            b = self.fields[b].value
+        
         # HANDLE IF A FIELD IS SPECIFIED BUT DOESN'T EXIST
-
+        
         # if a or b is a number convert to an int
-        if self.is_number(a):
+        if isinstance(a, str) and self.is_number(a):
             a = int(a)
-        if b and self.is_number(b):
+        if b and isinstance(b, str) and self.is_number(b):
             b = int(b)
 
         # if a or b is a bool, convert to a bool
@@ -156,6 +166,7 @@ class ObjectDef: # the instanciation of a class
             b = None
 
         #print("OPAB: ",op, a, b)
+        #print("Params: ", params)
         # op, a and b are now all valid
         res = self.simple_calculate(a,b,op, interpreter)
         return res
@@ -165,14 +176,16 @@ class ObjectDef: # the instanciation of a class
         two_op = (a != None and b!= None)
         a_is_bool = isinstance(a, bool)
         b_is_bool = isinstance(b, bool)
+        a_is_obj = isinstance(a, ObjectDef)
+        b_is_obj = isinstance(b, ObjectDef)
         a_is_int = (isinstance(a, int) and not a_is_bool)
         b_is_int = (isinstance(b, int) and not b_is_bool)
         a_is_string = self.is_string(a)
         b_is_string = self.is_string(b)
         a_is_none = (a == None)
         b_is_none = (b == None)
-            
-        if a_is_none and b_is_none:
+        
+        if (a_is_none and b_is_none) or (a_is_none and b_is_obj) or (b_is_none and a_is_obj):
                 if op == "==":
                     return a == b
                 elif op == "!=":
@@ -189,7 +202,6 @@ class ObjectDef: # the instanciation of a class
                     print(a)
                     print("Error with the not operator")
         elif two_op:
-            
             if a_is_string and b_is_string:
                 a = a.strip('"')
                 b = b.strip('"')
@@ -237,6 +249,14 @@ class ObjectDef: # the instanciation of a class
                 else:
                     print("Unsupported operation between bools")
                     interpreter.error("ErrorType.TYPE_ERROR")
+            elif a_is_obj and b_is_obj:
+                if op == "!=":
+                    return a != b
+                elif op == "==":
+                    return a == b
+                else:
+                    print("Unsupported operation between objects")
+                    interpreter.error("ErrorType.TYPE_ERROR")
             else:
                 print(a)
                 print(b)
@@ -270,6 +290,7 @@ class ObjectDef: # the instanciation of a class
                 #print("Param_map: ", params)
                 cur = params[cur]
                 from_param_or_field = True
+                #print("q: ", cur)
             elif cur in self.fields:
                 #print("DEBUG:Field: ", cur, self.fields[cur].value)
                 cur = self.fields[cur].value
@@ -300,11 +321,12 @@ class ObjectDef: # the instanciation of a class
         if len(sub_statements) == 0:
             print("ERROR: Cannot have an empty begin statement.")
             #exit(1)
+        res = None
         for statement in sub_statements:
             res = self.__run_statement(statement, params, interpreter)
             if statement.statement_type == StatementType.RETURN:
                 return res
-        return None # if there is nothing to return return none
+        return res # if there is nothing to return return none
     
     def __execute_set(self, statement, params, interpreter):
         var_name, value_to_set = statement.args[0], statement.args[1]
@@ -364,13 +386,13 @@ class ObjectDef: # the instanciation of a class
         # return the statement specified by the result of the expression
         if expression_val == True and isinstance(expression_val, bool): 
             if_clause = StatementDef(if_clause)
-            self.__run_statement(if_clause, params, interpreter) # execute if_clause
+            return self.__run_statement(if_clause, params, interpreter) # execute if_clause
         elif expression_val == False and isinstance(expression_val, bool):
             if else_clause != None:
                 else_clause = StatementDef(else_clause)
-                self.__run_statement(else_clause, params, interpreter) # execute else_clause
+                return self.__run_statement(else_clause, params, interpreter) # execute else_clause
         else:
-            interpreter.error("ErrorType.TYPE_ERROR")
+            interpreter.error(ErrorType.TYPE_ERROR)
             print("ERROR: If Expression did not result in a Boolean")
     
     def __execute_while(self, statement, params, interpreter):
@@ -385,7 +407,7 @@ class ObjectDef: # the instanciation of a class
             res = self.__execute_expession(condition, params, interpreter) #execute the condition
             if res == True and isinstance(res, bool):
                 # run the statement
-                self.__run_statement(statement_to_run, params, interpreter) # execute if_clause
+                return self.__run_statement(statement_to_run, params, interpreter) # execute if_clause
             elif res == False and isinstance(res, bool):
                 break # exit the while loop
             else:
@@ -411,9 +433,12 @@ class ObjectDef: # the instanciation of a class
             expression_val = True
         elif expression_val == "false":
             expression_val = False
+        elif isinstance(expression_val, str) and self.is_number(expression_val):
+            #print("%",expression_val)
+            expression_val = int(expression_val)
         return expression_val
     
-    def __execute_call(self, statement, params, interpreter):
+    def __execute_call(self, statement, old_params, interpreter):
         #print("Parsing a call statement")
         # Syntax
         # (call target_object method_name param1 ... paramn)
@@ -425,10 +450,21 @@ class ObjectDef: # the instanciation of a class
             params = statement.args[2:]
         #print("Printing from __execute_call", obj_to_call_name, func_to_call, params)
         
+        # params could be from a field or the old parameters or could be an expression
+        for i in range(len(params)):
+            if self.is_expression(params[i]):
+                params[i] = self.__execute_expession(params[i], old_params, interpreter) 
+            elif params[i] in self.fields: # handle field
+                params[i] = self.fields[params[i]].value
+            elif params[i] in old_params: # handle param
+                params[i] = old_params[params[i]]
+        #print("Old_params: ", old_params, params)
+
         # call me
         if obj_to_call_name == InterpreterBase.ME_DEF:
-            return self.run_method(func_to_call, params, interpreter)
-        
+            res = self.run_method(func_to_call, params, interpreter)
+            #print("From exec call: ", res)
+            return res
         # otherwise look in the fields (where the value of the field is set to the class)
         for name, obj in self.fields.items():
             #print(name, obj_to_call_name)
@@ -441,9 +477,13 @@ class ObjectDef: # the instanciation of a class
         interpreter.error(ErrorType.FAULT_ERROR) 
         
     def __execute_return(self, statement, params, interpreter):
+        #print("args: ", statement.args)
+        if len(statement.args) == 0: # for the (return) statement
+            return None
         expression_to_return = statement.args[0]
         #print("expression_to_return", expression_to_return, params)
         res = self.__execute_expession(expression_to_return, params, interpreter) #execute the condition
+        #print("res: ", res)
         return res
     
     # runs/interprets the passed-in statement until completion and gets the result, if any

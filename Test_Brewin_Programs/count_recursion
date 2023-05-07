@@ -1,0 +1,18 @@
+(class main
+    (field x 5)
+    (method main ()
+        (begin
+            #(inputi x)
+            (print (call me count_down x))
+        )
+    )
+    (method count_down (n)
+      (begin
+          (print "n is " n)
+          (if (== n 0)
+           (return)
+           (call me count_down (- n 1))
+          )
+      )
+    )
+)

@@ -1,0 +1,16 @@
+(class main
+    (method main ()
+        (print (call (call (new other) func1 3) func2 5))
+    ) 
+) 
+(class other
+    (method func1 (x) 
+        (return (new other))
+    )
+    (method func2 (x)
+        (begin
+            (print x)
+            (return 0)
+        )
+    )
+)

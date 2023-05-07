@@ -1,0 +1,15 @@
+(class main
+    (field x null)
+    (method main ()
+        (begin
+            (set x (new Foo))
+            (if (!= x null)
+                (print true)
+                (print false)
+            )
+        )
+    )
+)
+(class Foo
+    (method nothing () (return))
+)

@@ -35,7 +35,8 @@ if __name__ == "__main__":
                   "factorial_simple",
                   "factorial",
                   "call_complex_test",
-                  "pg14_test"
+                  "pg14_test",
+                  "count_recursion"
                   ]
     test_less_paths = ["two_method_test",
                        "input_param_test", 
@@ -47,7 +48,11 @@ if __name__ == "__main__":
                        "factorial_simple",
                        "factorial",
                        "call_complex_test",
-                       "pg14_test"
+                       "pg14_test",
+                       "count_recursion",
+                       "recursion1_test",
+                       "null_test3",
+                       "nested_calls_test"
                        ]
     # run the interpreter
     file_path_base = '../Test_Brewin_Programs/'  # Replace with your file path
