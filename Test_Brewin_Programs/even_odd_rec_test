@@ -1,0 +1,20 @@
+(class main
+    (method main ()
+        (begin
+            (print (call me is_even 5))
+        )
+    ) 
+    (method is_even (n)
+        (if (== n 0)
+            (return true)
+            (return (call me is_odd (- n 1)))
+        )
+    )
+    (method is_odd (n)
+        (if (== n 0)
+            (return false)
+            (return (call me is_even (- n 1)))
+        )
+    )
+) 
+

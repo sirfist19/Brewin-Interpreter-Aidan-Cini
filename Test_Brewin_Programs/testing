@@ -1,16 +1,18 @@
 (class main
-  (field p null)
-  (method tell_joke (to_whom) (print "Hey " to_whom ", knock knock!"))
-  (method main ()
-    (begin
-      (print "true: " (== (+ "foo" "bar") "foobar"))
-      (print "true: " (== (+ "foo" "bar") (+ "fo" "obar")))
-      
-      #(call me tell_joke "Leia") # calling method in the current obj
-      #(set p (new person))
-      #(call p init "Siddarth" 25) # calling method in other object
-      #(call p talk "Boyan") # calling method in other object
-      #(print "Siddarth's age is " (call p get_age))
-    )
-  )
+ (field x null)
+ (method main ()
+   (begin
+      (print (call (new bad) s "c") )
+   )
+ )
+)
+
+(class bad
+ (field x null)
+ (method s (x)
+   (return (call (new bad) r "a" "b"))
+ )
+ (method r (x y)
+   (return (+ x y))
+ )
 )

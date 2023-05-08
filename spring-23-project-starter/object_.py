@@ -187,6 +187,8 @@ class ObjectDef: # the instanciation of a class
         #print("Params: ", params)
         # op, a and b are now all valid
         res = self.simple_calculate(a,b,op, interpreter)
+        if isinstance(res, str): 
+            res = '"' + res + '"' # enclose in double-quotes
         return res
         
     def simple_calculate(self, a, b, op, interpreter):
@@ -487,6 +489,8 @@ class ObjectDef: # the instanciation of a class
             expression_val = True
         elif expression_val == InterpreterBase.FALSE_DEF:
             expression_val = False
+        elif expression_val == InterpreterBase.NULL_DEF or isinstance(expression_val, NullType):
+            expression_val = NullType()
         elif isinstance(expression_val, str) and self.is_number(expression_val):
             expression_val = int(expression_val)
         elif isinstance(expression_val, int) \
@@ -496,6 +500,8 @@ class ObjectDef: # the instanciation of a class
             #print("Alt:", expression_val)
             return expression_val
         else:
+            print("Expression: ", expression)
+            print("Params:", params)
             print("error with expression value: ", expression_val)  
             interpreter.error(ErrorType.NAME_ERROR)
         return expression_val

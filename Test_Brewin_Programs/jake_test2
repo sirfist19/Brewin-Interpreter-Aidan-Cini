@@ -1,0 +1,16 @@
+(class main
+  (field asd 5)
+  (field xyz null)
+  (method main ()
+    (begin
+        (set asd (call (new check) init))
+        (print asd)
+      )
+    )
+)
+
+(class check
+  (method init () 
+    (return null)
+  )
+)

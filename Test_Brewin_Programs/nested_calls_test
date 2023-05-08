@@ -3,9 +3,19 @@
         (begin
           (print (call (new other) func2 5))
           (print (call (call (new other) func1 3) func2 5))
+          (print 
+            (call (call (new other) func1 3) func2 
+                (call (new number) echo 
+                    (call (new number) echo null)
+                )
+            )
+          )
         )
     ) 
 ) 
+(class number
+    (method echo (x) (return x))
+)
 (class other
     (method func1 (x) 
         (return (new other))
@@ -13,7 +23,7 @@
     (method func2 (x)
         (begin
             (print x)
-            (return 0)
+            (return)
         )
     )
 )
