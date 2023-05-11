@@ -1,0 +1,25 @@
+(class main
+    (method main ()
+        (begin
+            (call me nest_ifs 3) # the begin statement returns here because NullType() is returned! FIX
+            (print "Exiting main")
+        )
+    )
+    (method nest_ifs (x)
+        (begin
+            (if (!= x 2)
+                (if (== x 3)
+                    (begin
+                        (print "Exiting!")
+                        (return) # returning nothing is not caught correctly somewhere (in if or begin)
+                    )
+                )
+            )
+        )
+        
+    
+    )
+)
+
+# returning inside of a method should ALWAYS return -> returning null should return NullType()
+# If a call statement has a return value, then it should ONLY RETURN IF IT IS IN A RETURN STATEMENT!

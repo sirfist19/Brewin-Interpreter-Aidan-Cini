@@ -67,7 +67,8 @@ class Interpreter(InterpreterBase):
 
                         if value_no_type == InterpreterBase.NULL_DEF:
                             value_no_type = None
-                        value = ValueDef(type(value_no_type), value_no_type)
+                        value = value_no_type
+                        #ValueDef(type(value_no_type), value_no_type)
                         cur_field = VariableDef(name, value)
                         cur_class.add_field(cur_field)
 
@@ -87,7 +88,7 @@ class Interpreter(InterpreterBase):
                         cur_method = MethodDef(name, param_map, statement)
                         
                         #print("Adding a method")
-                        #print(f'Name: {name}, Params: {param_map}, Statement: {statement.statement_type, statement.args}')
+                        #print(f'Name: {name}, Params: {param_map}, Statement: {statement.type, statement.args}')
                         cur_class.add_method(cur_method)
                     else:
                         print("Error: Unknown list start within class")

@@ -47,7 +47,10 @@ if __name__ == "__main__":
                        "while_return_test2",
                        "str_op_test2",
                        "testing",
-                       "jake_test2"
+                       "jake_test2",
+                       "tree_test",
+                       "linked_list_test",
+                       "nested_if_return_test"
                   ]
     test_less_paths = ["two_method_test",
                        "input_param_test", 
@@ -76,6 +79,7 @@ if __name__ == "__main__":
     test_while = ["while_test", "while_return_test", "factorial_simple", "factorial"]
     test_str = ["str_op_test"]
     test_incorrect = ["testing"]
+
     # run the interpreter
     file_path_base = '../Test_Brewin_Programs/'  # Replace with your file path
     #print("Type in the file you want to run")

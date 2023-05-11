@@ -11,10 +11,10 @@ from intbase import *
  - OBJECTS
  
 '''
-class ValueDef:
-    def __init__(self, type, value):
-        self.type = type
-        self.value = value
+#class ValueDef:
+#    def __init__(self, type, value):
+#        self.type = type
+#        self.value = value
 
 class VariableDef:
     def __init__(self, name, value):
@@ -44,7 +44,7 @@ class StatementDef:
 
     def __init__(self, statement_data):
         statement_type, args = self.create_statement(statement_data)
-        self.statement_type = statement_type
+        self.type = statement_type
         self.args = args 
 
     def create_statement(self, statement_data): # statement data is the list of everything that will be the statement
