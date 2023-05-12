@@ -11,11 +11,15 @@ from intbase import *
  - OBJECTS
  
 '''
+#class ValueDef:
+#    def __init__(self, type, value):
+#        self.type = type
+#        self.value = value
+
 class VariableDef:
-    def __init__(self, name, value, type_):
+    def __init__(self, name, value):
         self.name = name
         self.value = value # of type ValueDef
-        self.type = type_ # should by of type DataType
 
 class StatementType(Enum):
     IF = 1
@@ -27,48 +31,6 @@ class StatementType(Enum):
     CALL = 7
     WHILE = 8
     RETURN = 9
-
-class BaseDataType(Enum):
-    INT = 1
-    STRING = 2
-    BOOL = 3
-    VOID = 4 # only a return data type ... if a function is marked this it either has (return) or no return statement
-    OBJECT = 5
-
-    def str_to_data_type(in_type):
-        if in_type == 'void':
-            return BaseDataType.VOID
-        elif in_type == 'int':
-            return BaseDataType.INT
-        elif in_type == 'bool':
-            return BaseDataType.BOOL
-        elif in_type == 'string':
-            return BaseDataType.STRING
-        else:
-            print("str_to_data_type input is ", in_type, ". Converting to DataType.OBJECT")
-            return BaseDataType.OBJECT
-    def get_default_value(dataType):
-        if BaseDataType.INT:
-            return 0
-        elif BaseDataType.STRING:
-            return ""
-        elif BaseDataType.BOOL:
-            return False
-        elif BaseDataType.OBJECT:
-            return NullType()
-        elif BaseDataType.VOID:
-            print("ERROR: Getting default value for void")
-            return None
-        else:
-            print("ERROR: Translating unrecognized data type")
-
-class DataType:
-    def __init__(self, base_data_type, class_name = ""):
-        self.base_data_type = base_data_type
-        if base_data_type == BaseDataType.OBJECT:
-            self.class_name = class_name
-        else:
-            self.class_name = ""
 
 class NullType(): # to return from (return)
         def __init__(self):
@@ -114,27 +76,13 @@ class StatementDef:
             print(statement_data)
 
 class MethodDef:
-    def __init__(self, name, 
-                 param_map_name_to_value, 
-                 param_map_name_to_type, 
-                 statement, 
-                 return_type):
+    def __init__(self, name, param_map, statement):
         self.name = name
-        self.param_map_name_to_value = param_map_name_to_value # of variable names to values -> initially all vars are set to None
-        self.param_map_name_to_type = param_map_name_to_type
+        self.param_map = param_map # of variable names to values -> initially all vars are set to None
         self.statement = statement
-        self.return_type = return_type
 
     def set_method_values(self, method_values):
-        # method_values is all of the values that are passed into the fxn
         # set the values of each of the items in the param map to the method_values by index
-
-        param_name_list = list(self.param_map_name_to_value.keys())
+        key_list = list(self.param_map.keys())
         for i in range(len(method_values)):
-            required_type = self.param_map_name_to_type[param_name_list[i]]
-            print("Required type: ", required_type, method_values[i])
-
-            # set the value to the value provided (type check is later)
-            self.param_map_name_to_value[param_name_list[i]] = method_values[i]
-
-            
+            self.param_map[key_list[i]] = method_values[i]

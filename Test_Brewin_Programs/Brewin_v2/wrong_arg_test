@@ -1,0 +1,61 @@
+(class thingy
+    (method void nothing () (print "thingy says hi!"))
+)
+(class thingy2
+    (method void nothing () (print "thingy2 says hi!"))
+)
+
+(class main
+    (method bool echo_bool ((bool a)) 
+        (return a)
+    )
+    (method int echo_int ((int a)) 
+        (return a)
+    )
+    (method string echo_string ((string a)) 
+        (return a)
+    )
+    
+    #(method bool echo_object ((bool a)) 
+    #    (return a)
+    #)
+    (method void test_invalid_parameter_set ((string a))
+        (begin
+            (set a 4)
+        )
+    )
+    (field int x 4) # setting a field to the wrong type should error: type error
+    (field string y "hi there")
+    (field bool z false)
+    (field thingy a null)
+    (method void main ()
+        (begin
+            (print (call me echo_string y))
+            (print (call me echo_int x))
+            (print (call me echo_bool z))
+            #(call me test_invalid_parameter_set y)
+            #(set x "a") # test setting string to a int field
+            #(set y 1) # test setting int to a string field
+            (set z true)
+            
+            (set a (new thingy)) # should work
+            (set a null)
+            #(set a (new thingy2)) # should fail cause thingy and thingy2 are not related
+            #(set a (new thingy))
+            #(call a nothing)
+        )
+    )
+)
+
+
+# __execute_call(self, statement, old_params, interpreter)   
+#   this should take in the values provided
+#   convert any names of fields or old_params to values
+#   -> the params list should have all valid values now
+#   then run_method is called 
+# run_method 
+#   finds the method to call 
+#   now have access to the method.param_map_name_to_type
+#   so should do the TYPE CHECKING here of
+#   method.param_map_name_to_type vs. the values passed in
+# calls __run_statment on the statement within the method

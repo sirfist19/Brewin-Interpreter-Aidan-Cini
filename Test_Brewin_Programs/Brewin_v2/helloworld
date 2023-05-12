@@ -1,0 +1,5 @@
+(class main
+    (method void main ()
+        (print -4 0 "hello world!" 5 true)
+    ) 
+) 

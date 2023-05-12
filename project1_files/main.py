@@ -1,4 +1,4 @@
-from interpreterv2 import *
+from interpreterv1 import *
 
 def to_src(file_path):
     """
@@ -80,16 +80,14 @@ if __name__ == "__main__":
     test_incorrect_v1 = ["testing"]
 
     test_paths_v2 = [
-        "add_test",
-        "helloworld",
-        "wrong_arg_test"
+        "helloworld"
     ]
     # run the interpreter
     file_path_base_project1 = '../Test_Brewin_Programs/Brewin_v1/'  
     file_path_base_project2 = '../Test_Brewin_Programs/Brewin_v2/'  
     print("==================")
-    for path in test_paths_v2:
-        file_path = file_path_base_project2 + path
+    for path in test_paths_v1:
+        file_path = file_path_base_project1 + path
         src = to_src(file_path)
         #print("\n\n==================")
         

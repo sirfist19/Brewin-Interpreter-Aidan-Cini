@@ -6,14 +6,12 @@ class ClassDef:
         self.name = name
         self.methods = {} # a dict of MethodDefs of name to the method
         self.fields = {} # a dictionary of variables of names to values
-        self.fields_to_type = {} # dict of variable names to their required types
     
     def add_method(self, method): # method should be of type MethodDef
         self.methods[method.name] = method
 
-    def add_field(self, field): # field should be of type VariableDef 
+    def add_field(self, field): # field should be of type VariableDef (I think...)
         self.fields[field.name] = field.value
-        self.fields_to_type[field.name] = field.type
 
     # uses the definition of a class to create and return an instance of it
     def instantiate_object(self):
@@ -21,7 +19,6 @@ class ClassDef:
         for method in self.methods.values():
             obj.add_method(method)
         for field_name, field_value in self.fields.items():
+            #obj.add_field(field.name(), field.initial_value())
             obj.add_field(field_name, field_value)
-        for field_name, field_type in self.fields_to_type.items():
-            obj.add_field_type(field_name, field_type)
         return obj
