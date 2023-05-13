@@ -1,0 +1,9 @@
+(class main
+    (field person x null)
+    (method void main ()
+        (print (call x m))
+    ) 
+) 
+(class person
+    (field int temp 0)
+)

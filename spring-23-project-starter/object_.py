@@ -241,6 +241,12 @@ class ObjectDef: # the instanciation of a class
         if b == InterpreterBase.NULL_DEF:
             b = None
 
+        # if a or b is NullType and has is_null true -> meaning it is null, convert to None
+        if isinstance(a, NullType) and a.is_null == True:
+            a = None
+        if isinstance(b, NullType) and b.is_null == True:
+            b = None
+
         #print("OPAB: ",op, a, b)
         #print("Params: ", params)
         # op, a and b are now all valid
@@ -620,7 +626,7 @@ class ObjectDef: # the instanciation of a class
             #print(name, obj_to_call_name)
             if name == obj_to_call_name:
                 obj_to_call = obj 
-                if obj_to_call == None:
+                if obj_to_call == None or isinstance(obj_to_call, NullType):
                     print("Cannot call function on null object!")
                     interpreter.error(ErrorType.FAULT_ERROR) 
                 func_to_call = statement.args[1]
@@ -631,7 +637,7 @@ class ObjectDef: # the instanciation of a class
         for name, obj in old_params.items():
             if name == obj_to_call_name:
                 obj_to_call = obj
-                if obj_to_call == None:
+                if obj_to_call == None or isinstance(obj_to_call, NullType):
                     print("Cannot call function on null object!")
                     interpreter.error(ErrorType.FAULT_ERROR) 
                 func_to_call = statement.args[1]

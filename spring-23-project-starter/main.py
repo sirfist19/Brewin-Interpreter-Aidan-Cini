@@ -85,7 +85,9 @@ if __name__ == "__main__":
         "wrong_arg_test",
         "return_type_test",
         "while_return_test2",
-        "default_return_test"
+        "default_return_test",
+        "cmp_null_test3"
+        #"null_obj_ref_test"
     ]
     # run the interpreter
     file_path_base_project1 = '../Test_Brewin_Programs/Brewin_v1/'  

@@ -1,0 +1,20 @@
+(class main
+    (field Foo x null)
+    (method void main ()
+        (begin
+            (set x (new Foo))
+            (if (!= x null)
+                (print true)
+                (print false)
+            )
+            (set x null)
+            (if (!= x null)
+                (print true)
+                (print false)
+            )
+        )
+    )
+)
+(class Foo
+    (method void nothing () (return))
+)
