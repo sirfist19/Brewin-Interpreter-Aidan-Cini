@@ -7,7 +7,8 @@ class Comedian:
         return self.__joke
     
 def process(c):
-    # line A
+    # line A 
+    # c = copy.copy(c)
     c[1] = Comedian("joke3")
     c.append(Comedian("joke4"))
     c = c + [Comedian("joke5")]

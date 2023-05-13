@@ -3,8 +3,11 @@ from intbase import *
 from fundamental_defs import StatementType, DataType, BaseDataType, StatementDef, NullType
 
 def is_number(cur): # returns true if the input is an int or a string that contains an integer
-        if not isinstance(cur, int) and \
-                (cur == None or cur == True or cur == False or isinstance(cur, ObjectDef)):
+        # if cur is False, True, None, or is an object, or is NullType should return False
+        # if cur is an int or is a string that holds an int return True
+        #OLD VERSION: if not isinstance(cur, int) and \
+        #        (cur == None or cur == True or cur == False or isinstance(cur, ObjectDef)):
+        if cur is False or cur is True or cur is None or isinstance(cur, ObjectDef) or isinstance(cur, NullType):    
             return False
         return isinstance(cur, int) or \
                 (cur.isdigit() or (cur[1:].isdigit() and cur[0] == '-'))
@@ -14,26 +17,28 @@ def is_string(cur): # returns true if the string is surrounded by double quotes 
         cur == True or \
             cur == False or \
                 isinstance(cur, int) or \
-                    isinstance(cur, ObjectDef):
+                    isinstance(cur, ObjectDef) or isinstance(cur, NullType):
         return False
-    return cur[0] == '\"' and cur[-1] == '\"'
+    return cur == "" or (cur[0] == '\"' and cur[-1] == '\"')
 
 def basic_type_check(input, expected_type):
         # makes sure the input is of expected type
         #   expected type is of type 
-        print(f"Input: {input}, \
-              Expected Type: {expected_type}, ")
+        #print(f"Input: {input}, \
+        #      Expected Type: {expected_type}, ")
         expected_base_type = expected_type.base_data_type
         expected_class_name = expected_type.class_name
 
         if expected_base_type == BaseDataType.OBJECT: 
-            if input == InterpreterBase.NULL_DEF or isinstance(input, NullType):
+            if input == InterpreterBase.NULL_DEF or (isinstance(input, NullType) and input.is_null == True):
                 return True
             elif isinstance(input, ObjectDef) and \
                 input.name == expected_class_name: # name check for objects!
                 return True
-            else:
+            elif isinstance(input, ObjectDef):
                 print("ERROR: Name of object did not match!")
+                return False
+            else: # if an object is not passed in
                 return False
         elif expected_base_type == BaseDataType.INT:
             return is_number(input)
@@ -41,13 +46,13 @@ def basic_type_check(input, expected_type):
             return is_string(input)
         elif expected_base_type == BaseDataType.BOOL:
             return input == InterpreterBase.TRUE_DEF \
-                    or input == InterpreterBase.FALSE_DEF
+                    or input == InterpreterBase.FALSE_DEF or input is True or input is False
         elif expected_base_type == BaseDataType.VOID:
-            print("unsure how to deal with basic_type_check on VOID")
-            return False
-        
-            # want to check input.name which is the object's class name with the actual class expected
-            #   HOW TO DO THIS?
+            #print(f"Comparing {input} to VOID data type")
+            return ((input == None) # no return statement
+                    or 
+                    (isinstance(input, NullType) and input.is_null == False) # a (return) statement
+                    )
         print("ERROR: Unknown expected_type passed into basic_type_check")
         return False
 
@@ -94,13 +99,25 @@ class ObjectDef: # the instanciation of a class
             method_matches_param_values = self.method_matches_input_values_TYPE_CHECK(method, param_values)
             if method_matches_param_values:
                 method.set_method_values(param_values)
-                print("method_map from run_method: ", method.param_map_name_to_value, method.param_map_name_to_type)
+                #print("method_map from run_method: ", method.param_map_name_to_value, method.param_map_name_to_type)
                 result = self.__run_statement(method.statement, 
                                               method.param_map_name_to_value, 
                                               method.param_map_name_to_type,
                                               interpreter)
-                #print("res from run_method:",result)
-                return result 
+                #print("Before default typing", result, method.return_type.base_data_type)
+
+                # add in default typing for no return statement or (return) statement
+                if (result is None or (isinstance(result, NullType) and result.is_null == False)) \
+                        and method.return_type.base_data_type != BaseDataType.VOID:
+                    result = BaseDataType.get_default_value(method.return_type.base_data_type)
+                    #print("After default typing", result, method.return_type.base_data_type)
+
+                # return type checking
+                if basic_type_check(result, method.return_type):
+                    return result 
+                else: 
+                    print(f"ERROR: After method of name {method_name} was run, the return value of {result} was not of type {method.return_type.base_data_type}")
+                    interpreter.error(ErrorType.TYPE_ERROR)
             else:
                 print("method does not match the input params")
                 interpreter.error(ErrorType.NAME_ERROR)
@@ -224,7 +241,7 @@ class ObjectDef: # the instanciation of a class
         if b == InterpreterBase.NULL_DEF:
             b = None
 
-        print("OPAB: ",op, a, b)
+        #print("OPAB: ",op, a, b)
         #print("Params: ", params)
         # op, a and b are now all valid
         res = self.simple_calculate(a,b,op, interpreter)
@@ -420,7 +437,7 @@ class ObjectDef: # the instanciation of a class
 
         # if value_to_set is null then set it to None
         if value_to_set == InterpreterBase.NULL_DEF:
-            value_to_set = NullType()
+            value_to_set = NullType(True) # True to set the is_null field in NullType to True
         # if value_to_set is an expression evaluate it!
         elif self.is_expression(value_to_set):
             value_to_set = self.__handle_expression(value_to_set, params, params_to_type, interpreter)
@@ -448,7 +465,7 @@ class ObjectDef: # the instanciation of a class
         # if a field
         elif var_name in self.fields:
             
-            print("CURRENT STATE OF FIELDS: ",self.fields, [(name, type_.base_data_type, type_.class_name) for name, type_ in self.fields_to_type.items()])
+            #print("CURRENT STATE OF FIELDS: ",self.fields, [(name, type_.base_data_type, type_.class_name) for name, type_ in self.fields_to_type.items()])
             required_type = self.fields_to_type[var_name]
             if basic_type_check(value_to_set, required_type):
                 self.fields[var_name] = value_to_set #ValueDef(type(value_to_set), value_to_set)
@@ -482,7 +499,7 @@ class ObjectDef: # the instanciation of a class
 
         # handle the expression
         expression_val = self.__execute_expession(expression, params, params_to_type, interpreter)
-
+        #print("Expression val:",expression_val)
         # return the statement specified by the result of the expression
         if expression_val == True and isinstance(expression_val, bool): 
             if_clause = StatementDef(if_clause)
@@ -538,8 +555,10 @@ class ObjectDef: # the instanciation of a class
             expression_val = True
         elif expression_val == InterpreterBase.FALSE_DEF:
             expression_val = False
-        elif expression_val == InterpreterBase.NULL_DEF or isinstance(expression_val, NullType):
-            expression_val = NullType()
+        elif expression_val == InterpreterBase.NULL_DEF:
+            expression_val = NullType(True)
+        elif isinstance(expression_val, NullType):
+            return expression_val
         elif isinstance(expression_val, str) and is_number(expression_val):
             expression_val = int(expression_val)
         elif isinstance(expression_val, int) \
@@ -565,7 +584,8 @@ class ObjectDef: # the instanciation of a class
         params = []
         if len(statement.args) > 2:
             params = statement.args[2:]
-        #print("Printing from __execute_call", obj_to_call_name, func_to_call, params)
+        params_types = [0 for x in params] # filled with 0s for default
+        #print("Printing from __execute_call", params, params_types, old_params, old_params_to_type)
         
         # params could be from a field or the old parameters or could be an expression
         for i in range(len(params)):
@@ -573,9 +593,11 @@ class ObjectDef: # the instanciation of a class
                 params[i] = self.__execute_expession(params[i], old_params, old_params_to_type, interpreter) 
             elif params[i] in self.fields: # handle field
                 params[i] = self.fields[params[i]]
+                #params_types[i] = self.fields_to_type[params[i]]
             elif params[i] in old_params: # handle param
                 params[i] = old_params[params[i]]
-        print("Params before running the method to call: ", old_params, params)
+                #params_types[i] = old_params_to_type[params[i]]
+        #print("Params before running the method to call: ", params, params_types, old_params, old_params_to_type)
 
         # call me
         if obj_to_call_name == InterpreterBase.ME_DEF:
@@ -586,7 +608,7 @@ class ObjectDef: # the instanciation of a class
         # obj_to_call_name could be an expression. Handle that
         elif self.is_expression(obj_to_call_name):
             expression = obj_to_call_name
-            obj_to_call = self.__handle_expression(expression, params, interpreter)
+            obj_to_call = self.__handle_expression(expression, params, params_types, interpreter)
             if obj_to_call == None or not isinstance(obj_to_call, ObjectDef):
                 print("Cannot call function on null object!")
                 interpreter.error(ErrorType.FAULT_ERROR)
@@ -622,11 +644,12 @@ class ObjectDef: # the instanciation of a class
     def __execute_return(self, statement, params, params_to_type, interpreter):
         #print("args: ", statement.args)
         if len(statement.args) == 0: # for the (return) statement
-            return NullType()
+            #print("NullType false")
+            return NullType(False) # False to indicate that the is_null field is false
         expression_to_return = statement.args[0]
         #print("expression_to_return", expression_to_return, params)
         res = self.__execute_expession(expression_to_return, params, params_to_type, interpreter) #execute the condition
-        #print("res: ", res)
+        print("From __execute_return returning: ", res)
         return res
     
     # runs/interprets the passed-in statement until completion and gets the result, if any

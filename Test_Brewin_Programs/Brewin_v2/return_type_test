@@ -1,0 +1,31 @@
+(class main
+    (method int r1 () (return false)) # fails
+    (method string r2 () (return 5))
+    (method person r_class1 () (return (new dog))) # fails
+    (method void r_void () (return null))
+
+    (method person return_null () (return null))
+    (method void ret_has_ret () (return))
+    (method void ret_no_ret () (print ""))
+
+    (method void main ()
+        (begin
+            (print (call me return_null))
+            (print "return_null complete")
+            (print (call me ret_has_ret))
+            (print "ret_has_ret complete")
+            (print (call me ret_no_ret))
+            (print "ret_no_ret complete")
+            #(print "r1: " (call me r1))
+            #(print "r2: " (call me r2))
+            #(print "r_class1: " (call me r_class1))
+            #(print "r_void: " (call me r_void))
+        )
+    )
+)
+(class person
+    (method void nothing () (print ""))
+)
+(class dog
+    (method void nothing () (print ""))
+)

@@ -82,7 +82,10 @@ if __name__ == "__main__":
     test_paths_v2 = [
         "add_test",
         "helloworld",
-        "wrong_arg_test"
+        "wrong_arg_test",
+        "return_type_test",
+        "while_return_test2",
+        "default_return_test"
     ]
     # run the interpreter
     file_path_base_project1 = '../Test_Brewin_Programs/Brewin_v1/'  

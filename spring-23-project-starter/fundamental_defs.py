@@ -45,18 +45,18 @@ class BaseDataType(Enum):
         elif in_type == 'string':
             return BaseDataType.STRING
         else:
-            print("str_to_data_type input is ", in_type, ". Converting to DataType.OBJECT")
+            #print("str_to_data_type input is ", in_type, ". Converting to DataType.OBJECT")
             return BaseDataType.OBJECT
     def get_default_value(dataType):
-        if BaseDataType.INT:
+        if dataType == BaseDataType.INT:
             return 0
-        elif BaseDataType.STRING:
+        elif dataType == BaseDataType.STRING:
             return ""
-        elif BaseDataType.BOOL:
+        elif dataType == BaseDataType.BOOL:
             return False
-        elif BaseDataType.OBJECT:
-            return NullType()
-        elif BaseDataType.VOID:
+        elif dataType == BaseDataType.OBJECT:
+            return NullType(True) # is_null is true
+        elif dataType == BaseDataType.VOID:
             print("ERROR: Getting default value for void")
             return None
         else:
@@ -70,9 +70,10 @@ class DataType:
         else:
             self.class_name = ""
 
-class NullType(): # to return from (return)
-        def __init__(self):
-            self.value = None
+class NullType(): # to return from (return) and (return null)
+        def __init__(self, is_null): 
+            self.is_null = is_null # if null is returned this is true, 
+                    #if returning from an empty return, this is false
 
 class StatementDef:
     # if, begin, print, set, inputi, inputs, call, while, return
@@ -132,9 +133,15 @@ class MethodDef:
         param_name_list = list(self.param_map_name_to_value.keys())
         for i in range(len(method_values)):
             required_type = self.param_map_name_to_type[param_name_list[i]]
-            print("Required type: ", required_type, method_values[i])
+            print("Required type: ", required_type.base_data_type, method_values[i])
 
-            # set the value to the value provided (type check is later)
+            # if the passed in value is false or true, convert it to a python bool
+            if method_values[i] == InterpreterBase.FALSE_DEF:
+                method_values[i] = False
+            elif method_values[i] == InterpreterBase.TRUE_DEF:
+                method_values[i] = True
+
+            # set the value to the value provided (type check is before)
             self.param_map_name_to_value[param_name_list[i]] = method_values[i]
 
             

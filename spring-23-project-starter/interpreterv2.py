@@ -69,7 +69,7 @@ class Interpreter(InterpreterBase):
                             self.error(ErrorType.NAME_ERROR)
 
                         if value == InterpreterBase.NULL_DEF:
-                            value = NullType() #None
+                            value = NullType(True) # is_null field is true cause this is a null value
                         
                         if basic_type_check(value, type_):
                             cur_field = VariableDef(name, value, type_)
@@ -109,7 +109,7 @@ class Interpreter(InterpreterBase):
                                                return_type)
                         
                         #print("Adding a method")
-                        print(f'Name: {name}, Params: {param_map_name_to_type, param_map_name_to_value}, Statement: {statement.type, statement.args}')
+                        #print(f'Name: {name}, Params: {param_map_name_to_type, param_map_name_to_value}, Statement: {statement.type, statement.args}')
                         cur_class.add_method(cur_method)
                     else:
                         print("Error: Unknown list start within class")

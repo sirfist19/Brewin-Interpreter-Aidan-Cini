@@ -15,10 +15,10 @@
     (method string echo_string ((string a)) 
         (return a)
     )
-    
-    #(method bool echo_object ((bool a)) 
-    #    (return a)
-    #)
+    (method thingy echo_thingy ((thingy a)) 
+        (return a) # should fail with a type error!
+    )
+
     (method void test_invalid_parameter_set ((string a))
         (begin
             (set a 4)
@@ -30,15 +30,15 @@
     (field thingy a null)
     (method void main ()
         (begin
-            (print (call me echo_string y))
-            (print (call me echo_int x))
-            (print (call me echo_bool z))
+            #(print (call me echo_string y))
+            #(print (call me echo_int x))
+            #(print (call me echo_bool z))
+            (set a (new thingy)) # should work
+            (print (call (call me echo_thingy a) nothing))
             #(call me test_invalid_parameter_set y)
             #(set x "a") # test setting string to a int field
             #(set y 1) # test setting int to a string field
             (set z true)
-            
-            (set a (new thingy)) # should work
             (set a null)
             #(set a (new thingy2)) # should fail cause thingy and thingy2 are not related
             #(set a (new thingy))

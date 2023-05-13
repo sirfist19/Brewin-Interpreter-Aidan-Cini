@@ -1,0 +1,38 @@
+(class main
+  (field int temp 0)
+  (method int default_int () (set temp 0)) # returns 0 by default
+  (method string default_str () (set temp 0)) # returns "" by default
+  (method bool default_bool () (set temp 0)) # returns false by default
+  (method person default_class () (set temp 0)) # returns null
+
+  (method int default_int1 () (return)) # returns 0 by default
+  (method string default_str1 () (return)) # returns "" by default even though there is a return
+  (method bool default_bool1 ((bool q)) 
+    (if q
+      (return)  # returns default value for bool which is false
+      (return true)
+    )
+  )
+  (method person default_class1 () (return)) # returns null
+  (method void main () 
+    (begin
+      (print (call me default_bool1 false))  # prints true no default value
+      (print "***Now to defaults***")
+      (print (call me default_int)) # prints 0
+      (print (call me default_str)) # prints ""
+      (print (call me default_bool))   # prints false
+      (print (call me default_str)) # prints ""
+
+      (print (call me default_int1)) # prints 0
+      (print (call me default_str1)) # prints ""
+      (print (call me default_bool1 true))   # prints false
+      (print (call me default_str1)) # prints ""
+      (print "Done")
+    )
+  )
+)
+(class person
+    (field int temp 0)
+    (method void nothing () (set temp 0))
+)
+
