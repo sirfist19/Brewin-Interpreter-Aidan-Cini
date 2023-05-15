@@ -63,6 +63,7 @@ class ObjectDef: # the instanciation of a class
         self.fields = {}
         self.fields_to_type = {}
         self.local_var_stack = []
+        self.inherits_from = None # either None or ObjDef of the inherited class (as an object)
 
     def add_method(self, method): # method should be of type MethodDef
         self.methods[method.name] = method
@@ -73,10 +74,16 @@ class ObjectDef: # the instanciation of a class
     def add_field_type(self, field_name, field_type):
          self.fields_to_type[field_name] = field_type
 
-    def __find_method(self, method_name):
-        if method_name in self.methods:
-            return self.methods[method_name] # returns the method itself
-        return None
+    def __find_method(self, method_name, param_values, interpreter): # also runs the method
+        if method_name in self.methods and \
+            self.method_matches_input_values_TYPE_CHECK(self.methods[method_name],param_values):
+            # runs the method using a helper on this obj
+            return self.run_method_helper(self.methods[method_name], param_values, interpreter)
+        elif self.inherits_from is not None:
+            return self.inherits_from.__find_method(method_name, param_values, interpreter) 
+        else:
+            print("Cannot find function to run ... or the input types or amounts didn't match!")
+            interpreter.error(ErrorType.NAME_ERROR)
     
     def method_matches_input_values_TYPE_CHECK(self, method, input_values):
         # checks to see if the method to be called matches the argument types of the input_values provided
@@ -93,38 +100,34 @@ class ObjectDef: # the instanciation of a class
                 return False
         return True
     
-    def run_method(self, method_name, param_values, interpreter):
-        method = self.__find_method(method_name)
+    def run_method_helper(self, method, param_values, interpreter):
+        # actually runs the method
+        method.set_method_values(param_values)
+            #print("method_map from run_method: ", method.param_map_name_to_value, method.param_map_name_to_type)
+        result = self.__run_statement(method.statement, 
+                                    method.param_map_name_to_value, 
+                                    method.param_map_name_to_type,
+                                    interpreter)
+            #print("Before default typing", result, method.return_type.base_data_type)
 
-        if method:
-            method_matches_param_values = self.method_matches_input_values_TYPE_CHECK(method, param_values)
-            if method_matches_param_values:
-                method.set_method_values(param_values)
-                #print("method_map from run_method: ", method.param_map_name_to_value, method.param_map_name_to_type)
-                result = self.__run_statement(method.statement, 
-                                              method.param_map_name_to_value, 
-                                              method.param_map_name_to_type,
-                                              interpreter)
-                #print("Before default typing", result, method.return_type.base_data_type)
-
-                # add in default typing for no return statement or (return) statement
-                if (result is None or (isinstance(result, NullType) and result.is_null == False)) \
-                        and method.return_type.base_data_type != BaseDataType.VOID:
-                    result = BaseDataType.get_default_value(method.return_type.base_data_type)
-                    #print("After default typing", result, method.return_type.base_data_type)
+            # add in default typing for no return statement or (return) statement
+        if (result is None or (isinstance(result, NullType) and result.is_null == False)) \
+                and method.return_type.base_data_type != BaseDataType.VOID:
+            result = BaseDataType.get_default_value(method.return_type.base_data_type)
+                #print("After default typing", result, method.return_type.base_data_type)
 
                 # return type checking
-                if basic_type_check(result, method.return_type):
-                    return result 
-                else: 
-                    print(f"ERROR: After method of name {method_name} was run, the return value of {result} was not of type {method.return_type.base_data_type}")
-                    interpreter.error(ErrorType.TYPE_ERROR)
-            else:
-                print("method does not match the input params")
-                interpreter.error(ErrorType.NAME_ERROR)
-        else:
-            print("Cannot find function to run!")
-            interpreter.error(ErrorType.NAME_ERROR)
+        if basic_type_check(result, method.return_type):
+            return result 
+        else: 
+            print(f"ERROR: After method of name {method.name} was run, the return value of {result} was not of type {method.return_type.base_data_type}")
+            interpreter.error(ErrorType.TYPE_ERROR)
+        
+
+    def run_method(self, method_name, param_values, interpreter): # wrapper for find_method which actually runs the method on the object that the method came from
+        res = self.__find_method(method_name, param_values, interpreter)
+        return res
+         
     
     def __execute_inputs(self, statement, params, params_to_type,interpreter): #get string input and set to a field or parameter w/ matching name
         temp = interpreter.get_input()
@@ -467,10 +470,10 @@ class ObjectDef: # the instanciation of a class
             #print("in here 3")
             value_to_set = self.get_top_match_local_var(value_to_set)[2] # of format [TYPE, NAME, VALUE]
         elif value_to_set in params:
-            print("in here")
+            #print("in here")
             value_to_set = params[value_to_set]
         elif value_to_set in self.fields:
-            print("in here2")
+            #print("in here2")
             value_to_set = self.fields[value_to_set]
 
         # the variable to set could be in either self.fields or a parameter or a local var
@@ -633,6 +636,10 @@ class ObjectDef: # the instanciation of a class
             func_to_call = statement.args[1]
             res = self.run_method(func_to_call, params, interpreter)
             #print("From exec call: ", res)
+            return res
+        elif obj_to_call_name == InterpreterBase.SUPER_DEF:
+            func_to_call = statement.args[1]
+            res = self.inherits_from.run_method(func_to_call, params, interpreter)
             return res
         # obj_to_call_name could be an expression. Handle that
         elif self.is_expression(obj_to_call_name):

@@ -43,11 +43,18 @@ class Interpreter(InterpreterBase):
         
         for class_def in parsed_program:
             # class_def should have format ['class', 'main', [method ...]]
+            # can have format ['class', 'student', 'inherits', 'person', [field ...], [method ...]]
+            #  ['class', 'student', 'inherits', 'person', 
+            # ['field', 'int', 'student_id', '0'], 
+            # ['method', 'void', 'set_id', [['int', 'id']], ['set', 'student_id', 'id']], 
+            # ['method', 'void', 'say_something', [], ['begin', ['print', '"first"'], ['call', 'super', 'say_something'], ['print', '"second"']]], 
+            # ['method', 'void', 'to_be_overloaded', [['string', 'input']], ['print', '"I was overloaded successfully! "', 'input']]]
+            
             if class_def[0] != InterpreterBase.CLASS_DEF:
                 print("Error! Not in a class: ", class_def[0])
 
             class_name = class_def[1]
-
+        
             # handle duplicate classes when the name is already set
             if class_name in self.classes: 
                 print("duplicate class: ", class_name, self.classes)
@@ -115,7 +122,13 @@ class Interpreter(InterpreterBase):
                         print("Error: Unknown list start within class")
                         print(class_def[i][0])
                         #exit(1)
-            
+                elif class_def[i] == InterpreterBase.INHERITS_DEF: # if the 
+                    class_inherits_from_name = class_def[i+1]
+                    #print(f"{class_name} inherits from {class_inherits_from_name}")
+                    class_inherits_from = self.find_definition_for_class(class_inherits_from_name)
+                    cur_class.inherits_from = class_inherits_from
+                    #print(cur_class.inherits_from.methods)
+
             # add the current class to the list
                 #print("Adding a class")
             self.classes[cur_class.name] = cur_class

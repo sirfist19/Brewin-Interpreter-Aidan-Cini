@@ -7,6 +7,7 @@ class ClassDef:
         self.methods = {} # a dict of MethodDefs of name to the method
         self.fields = {} # a dictionary of variables of names to values
         self.fields_to_type = {} # dict of variable names to their required types
+        self.inherits_from = None # either None or ClassDef of the inherited class
     
     def add_method(self, method): # method should be of type MethodDef
         self.methods[method.name] = method
@@ -24,4 +25,8 @@ class ClassDef:
             obj.add_field(field_name, field_value)
         for field_name, field_type in self.fields_to_type.items():
             obj.add_field_type(field_name, field_type)
+        if self.inherits_from is not None:
+            base_obj = self.inherits_from.instantiate_object()
+            obj.inherits_from = base_obj
+            #print("set object method")
         return obj

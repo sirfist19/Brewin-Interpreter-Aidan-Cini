@@ -87,7 +87,9 @@ if __name__ == "__main__":
         "while_return_test2",
         "default_return_test",
         "cmp_null_test3",
-        "let_test1"
+        "let_test1",
+        "inherit_test1",
+        "polymorphism_test1"
         #"null_obj_ref_test"
     ]
     # run the interpreter
