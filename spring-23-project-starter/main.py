@@ -86,7 +86,8 @@ if __name__ == "__main__":
         "return_type_test",
         "while_return_test2",
         "default_return_test",
-        "cmp_null_test3"
+        "cmp_null_test3",
+        "let_test1"
         #"null_obj_ref_test"
     ]
     # run the interpreter

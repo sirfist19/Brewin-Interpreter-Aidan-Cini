@@ -62,6 +62,7 @@ class ObjectDef: # the instanciation of a class
         self.methods = {}
         self.fields = {}
         self.fields_to_type = {}
+        self.local_var_stack = []
 
     def add_method(self, method): # method should be of type MethodDef
         self.methods[method.name] = method
@@ -183,11 +184,13 @@ class ObjectDef: # the instanciation of a class
         else:
             op, a, b = expression[0:3]
         
-        # check to see if a or b is a field or parameter 
+        # check to see if a or b is a field or parameter or local variable
         if not isinstance(a, list):
-            if a in params:
+            if self.in_local_vars(a):
+                a = self.get_top_match_local_var(a)[2] # of format [TYPE, NAME, VALUE]
+            elif a in params:
                 a = params[a]
-            if a in self.fields:
+            elif a in self.fields:
                 a = self.fields[a]
             elif not is_string(a) and \
                 not is_number(a) and \
@@ -196,6 +199,8 @@ class ObjectDef: # the instanciation of a class
                 print("unknown variable in expression", a)
                 interpreter.error(ErrorType.NAME_ERROR)
         if not isinstance(b, list):
+            if self.in_local_vars(b):
+                b = self.get_top_match_local_var(b)[2] # of format [TYPE, NAME, VALUE]
             if b in params:
                 b = params[b]
             elif b in self.fields:
@@ -371,18 +376,22 @@ class ObjectDef: # the instanciation of a class
                 cur = cur.strip('\'')
             #    print("arg after: ", cur)
 
-            # first check if the current print argument is actually a parameter or field
-            #   if so get its value
-            from_param_or_field = False
+            # FIRST CHECK IF THE PRINT ARG IS ACTUALLY A LOCAL VAR, THEN PARAMETER THEN FIELD, WITH THAT PRIORITY
+            #   IF SO GET ITS VALUE
+            from_local_var_or_param_or_field = False
+            if not isinstance(cur, list) and self.in_local_vars(cur):
+                data_type, name, value = self.get_top_match_local_var(cur)
+                cur = value
+                from_local_var_or_param_or_field = True
             if not isinstance(cur, list) and cur in params:
                 #print("Param_map: ", params)
                 cur = params[cur]
-                from_param_or_field = True
+                from_local_var_or_param_or_field = True
                 #print("q: ", cur)
             elif not isinstance(cur, list) and cur in self.fields:
                 #print("DEBUG:Field: ", cur, self.fields[cur])
                 cur = self.fields[cur]
-                from_param_or_field = True
+                from_local_var_or_param_or_field = True
 
             # second check if the current print argument is actually an expression
             #   if so evaluate it!
@@ -414,7 +423,7 @@ class ObjectDef: # the instanciation of a class
             elif cur == InterpreterBase.TRUE_DEF or cur == InterpreterBase.FALSE_DEF:
                 #print("DEBUG:Is a bool")
                 to_print += cur
-            elif is_string(cur) or (from_param_or_field and isinstance(cur, str)):
+            elif is_string(cur) or (from_local_var_or_param_or_field and isinstance(cur, str)):
                 #print("DEBUG:IS A STRING")
                 res = cur.strip('"')
                 #print("Arg after strip \": ", res)
@@ -440,7 +449,8 @@ class ObjectDef: # the instanciation of a class
     
     def __execute_set(self, statement, params, params_to_type, interpreter):
         var_name, value_to_set = statement.args[0], statement.args[1]
-
+        #print("NAME and VALUE:",var_name, value_to_set)
+        #print(self.local_var_stack)
         # if value_to_set is null then set it to None
         if value_to_set == InterpreterBase.NULL_DEF:
             value_to_set = NullType(True) # True to set the is_null field in NullType to True
@@ -452,15 +462,23 @@ class ObjectDef: # the instanciation of a class
                     value_to_set = InterpreterBase.TRUE_DEF
                 else:
                     value_to_set = InterpreterBase.FALSE_DEF
-        # the value could refer to a field or parameter
+        # the value could refer to a field or parameter or local var
+        elif self.in_local_vars(value_to_set):
+            #print("in here 3")
+            value_to_set = self.get_top_match_local_var(value_to_set)[2] # of format [TYPE, NAME, VALUE]
         elif value_to_set in params:
+            print("in here")
             value_to_set = params[value_to_set]
         elif value_to_set in self.fields:
+            print("in here2")
             value_to_set = self.fields[value_to_set]
 
-        # the variable to set could be in either self.fields or a parameter
+        # the variable to set could be in either self.fields or a parameter or a local var
+        # if a local var
+        if self.in_local_vars(var_name):
+            self.set_top_match_local_var(var_name ,value_to_set, interpreter)
         # if a parameter
-        if var_name in params:
+        elif var_name in params:
             required_type = params_to_type[var_name]
             if basic_type_check(value_to_set, required_type):
                 params[var_name] = value_to_set
@@ -544,7 +562,9 @@ class ObjectDef: # the instanciation of a class
     
     def __execute_expession(self, expression, params, params_to_type, interpreter):
         expression_val = expression
-
+        # if the expression is a local var (the name of a)
+        if not isinstance(expression, list) and self.in_local_vars(expression):
+            return self.get_top_match_local_var(expression)[2] # of format [TYPE, NAME, VALUE]
         # if the expression is a param
         if not isinstance(expression, list) and expression in params:
             return params[expression]
@@ -593,15 +613,18 @@ class ObjectDef: # the instanciation of a class
         params_types = [0 for x in params] # filled with 0s for default
         #print("Printing from __execute_call", params, params_types, old_params, old_params_to_type)
         
-        # params could be from a field or the old parameters or could be an expression
+        # params could be from a local var or field or the old parameters or could be an expression
         for i in range(len(params)):
             if self.is_expression(params[i]):
                 params[i] = self.__execute_expession(params[i], old_params, old_params_to_type, interpreter) 
+            elif self.in_local_vars(params[i]):
+                params[i] = self.get_top_match_local_var(params[i])[2] # of form [TYPE, NAME, VALUE]
+            elif params[i] in old_params: # handle param
+                params[i] = old_params[params[i]]
             elif params[i] in self.fields: # handle field
                 params[i] = self.fields[params[i]]
                 #params_types[i] = self.fields_to_type[params[i]]
-            elif params[i] in old_params: # handle param
-                params[i] = old_params[params[i]]
+            
                 #params_types[i] = old_params_to_type[params[i]]
         #print("Params before running the method to call: ", params, params_types, old_params, old_params_to_type)
 
@@ -621,6 +644,26 @@ class ObjectDef: # the instanciation of a class
             func_to_call = statement.args[1]
             return obj_to_call.run_method(func_to_call, params, interpreter)
         
+        # otherwise look in the local variables
+        if self.in_local_vars(obj_to_call_name):
+            obj_to_call = self.get_top_match_local_var(obj_to_call_name)[2] # of form [TYPE, NAME, VALUE]
+            if obj_to_call == None or isinstance(obj_to_call, NullType):
+                print("Cannot call function on null object!")
+                interpreter.error(ErrorType.FAULT_ERROR) 
+            func_to_call = statement.args[1]
+            return obj_to_call.run_method(func_to_call, params, interpreter)
+        
+        # otherwise look in the parameters (the old ones not the new ones provided to this call!)
+        #print("old_params: ", old_params)
+        for name, obj in old_params.items():
+            if name == obj_to_call_name:
+                obj_to_call = obj
+                if obj_to_call == None or isinstance(obj_to_call, NullType):
+                    print("Cannot call function on null object!")
+                    interpreter.error(ErrorType.FAULT_ERROR) 
+                func_to_call = statement.args[1]
+                return obj_to_call.run_method(func_to_call, params, interpreter)
+        
         # otherwise look in the fields (where the value of the field is set to the class)
         for name, obj in self.fields.items():
             #print(name, obj_to_call_name)
@@ -632,17 +675,6 @@ class ObjectDef: # the instanciation of a class
                 func_to_call = statement.args[1]
                 return obj_to_call.run_method(func_to_call, params, interpreter)
             
-        # otherwise look in the parameters (the old ones not the new ones provided to this call!)
-        #print("old_params: ", old_params)
-        for name, obj in old_params.items():
-            if name == obj_to_call_name:
-                obj_to_call = obj
-                if obj_to_call == None or isinstance(obj_to_call, NullType):
-                    print("Cannot call function on null object!")
-                    interpreter.error(ErrorType.FAULT_ERROR) 
-                func_to_call = statement.args[1]
-                return obj_to_call.run_method(func_to_call, params, interpreter)
-
         # if the object is not found in a field or is itself
         print("Object to call function on not found or the object is null!")
         interpreter.error(ErrorType.FAULT_ERROR) 
@@ -658,6 +690,92 @@ class ObjectDef: # the instanciation of a class
         print("From __execute_return returning: ", res)
         return res
     
+    def in_local_vars(self, cur):
+        # go through the local var stack and return true if there is a match
+        # cur is the name that we are searching for
+        # has format [[[TYPE, 'x', 'true'], [TYPE, 'y', '5']], [[TYPE, 'z', 6]]]
+        #print(self.local_var_stack)
+        for stack_frame in self.local_var_stack: # each let statement pushes one stack_frame containing local vars
+            for local_var in stack_frame:
+                name = local_var[1] # local_var is of format [TYPE, NAME, VALUE]
+                if name == cur:
+                    return True
+        return False
+    
+    def get_top_match_local_var(self, cur): # returns the variable searched for in format [TYPE, NAME, VALUE]
+                                            # searches the stack backwards from the latest pushed stack frame to the first pushed
+        #print(f"Attempting to match local var {cur}") 
+        for i in range(len(self.local_var_stack) - 1, -1, -1): # search backwards through stack frames
+            stack_frame = self.local_var_stack[i] # each let statement pushes one stack_frame containing local vars
+            for local_var in stack_frame:
+                name = local_var[1] # local_var is of format [TYPE, NAME, VALUE]
+                if name == cur:
+                    #print(f"Var matched with {cur}. Returning {local_var}")
+                    return local_var
+        print("ERROR: No matching local_var found. get_top_match_local_var should be called when the input is known to be in the local_var stack")
+        return None
+    
+    def set_top_match_local_var(self, cur, value_to_set, interpreter):
+        for i in range(len(self.local_var_stack) - 1, -1, -1): # search backwards through stack frames
+            stack_frame = self.local_var_stack[i] # each let statement pushes one stack_frame containing local vars
+            for local_var in stack_frame:
+                required_type, name, old_value = local_var # local_var is of format [TYPE, NAME, VALUE]
+    
+                if name == cur: # a match is found (cur is the variable to set's name)
+                    #print(value_to_set, required_type.base_data_type, required_type.class_name)
+                    if basic_type_check(value_to_set, required_type):
+                        local_var[2] = value_to_set # set the local variable
+                        return
+                    else:
+                        print("ERROR: Incompatible type when setting a local variable value")
+                        interpreter.error(ErrorType.TYPE_ERROR)
+        print("ERROR: No matching local_var found. set_top_match_local_var should be called when the input is known to be in the local_var stack")
+        
+    def __execute_let(self, statement, params, params_to_type, interpreter):
+        #print("executing a let statement")
+        # Example syntax:
+        # (let ((bool x true) (int y 5))
+        #       (print x) # Line #2: prints true
+        #        (print y) # Line #3: prints 5
+        #    )
+        #  [
+        # 'let', # the let 
+        # [['bool', 'x', 'true'], ['int', 'y', '5']], # the local var defs
+        # ['print', 'x'], # and each statement
+        # ['print', 'y']
+        # ]
+        local_var_defs = statement.args[0] # NEED TO GO THROUGH AND DEFINE THESE
+        cur_local_vars = []
+        already_used_names = set()
+        for var_def in local_var_defs:
+            type_name, name, value = var_def[0:3]
+            if name in already_used_names:
+                print(f"Duplicate local variable added! Of name {name}")
+                interpreter.error(ErrorType.NAME_ERROR)
+            else:
+                already_used_names.add(name)
+            base_data_type = BaseDataType.str_to_data_type(type_name)
+            data_type = DataType(base_data_type, type_name)
+            cur_local_vars.append([data_type, name, value]) # formating is TYPE, NAME, VALUE
+        
+        # add cur_local_vars to the top of the local var stack
+        self.local_var_stack.append(cur_local_vars)
+        #print(self.local_var_stack)
+        sub_statements = statement.args[1:]
+        #print(sub_statements)
+        if len(sub_statements) == 0:
+            print("ERROR: Cannot have an empty let statement.")
+        res = None
+        for statement in sub_statements:
+            statement = StatementDef(statement) # turn into an actual statement
+            res = self.__run_statement(statement, params, params_to_type, interpreter)
+            #print("res1: ", res, statement.type, statement.args)
+            if res != None and statement.type != StatementType.CALL: # if in a call statement do not return the value unless in a return statement itself
+                self.local_var_stack.pop() # POP THE STACK so local vars go out of scope
+                return res
+        self.local_var_stack.pop() # POP THE STACK so local vars go out of scope
+        
+
     # runs/interprets the passed-in statement until completion and gets the result, if any
     def __run_statement(self, statement, params, params_to_type, interpreter):
         if statement.type == StatementType.PRINT:
@@ -683,5 +801,7 @@ class ObjectDef: # the instanciation of a class
             return self.__execute_if(statement, params, params_to_type, interpreter)
         elif statement.type == StatementType.SET:
             return self.__execute_set(statement, params, params_to_type, interpreter)
+        elif statement.type == StatementType.LET:
+            return self.__execute_let(statement, params, params_to_type, interpreter)
         print("Statement type error!")
         return None

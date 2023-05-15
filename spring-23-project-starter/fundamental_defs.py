@@ -27,6 +27,7 @@ class StatementType(Enum):
     CALL = 7
     WHILE = 8
     RETURN = 9
+    LET = 10
 
 class BaseDataType(Enum):
     INT = 1
@@ -110,6 +111,8 @@ class StatementDef:
             return (StatementType.SET, statement_data[1:])
         elif statement_data[0] == InterpreterBase.IF_DEF:
             return (StatementType.IF, statement_data[1:])
+        elif statement_data[0] == InterpreterBase.LET_DEF:
+            return (StatementType.LET, statement_data[1:])
         else:
             print("Unrecognized statement!")
             print(statement_data)

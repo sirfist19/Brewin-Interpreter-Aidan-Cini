@@ -1,0 +1,38 @@
+(class main
+    (field string long_str "")
+    (method void foo ((int x))
+        (begin
+            (print x) # Line #1: prints 10
+            (let ((bool x true) (int y 5))
+                (print x) # Line #2: prints true
+                (print y) # Line #3: prints 5
+                (while (> y 0)
+                    (let ((string x "hi") (person p null) (person q null)) # should give a name error
+                        (set long_str (+ long_str x))
+                        (print long_str)
+                        (set y (- y 1))
+                        (set q (new person))
+                        (set p q)
+                        (call p set_i y)
+                        (call p display)
+                        (call q display)
+                    )
+                )
+                (print y) # prints 0
+            )
+            (print x) # Line #4: prints 10
+        )
+    )
+    (method void main ()
+        (call me foo 10)
+    )
+)
+(class person
+    (field int i 0)
+    (method void set_i ((int x))
+        (set i x)
+    )
+    (method void display ()
+        (print "Person field is " i)
+    )
+)
