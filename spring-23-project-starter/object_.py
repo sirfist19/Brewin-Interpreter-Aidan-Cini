@@ -35,6 +35,12 @@ def basic_type_check(input, expected_type):
             elif isinstance(input, ObjectDef) and \
                 input.name == expected_class_name: # name check for objects!
                 return True
+            # polymorphism type check -> check the base class to see if it is a type match
+            elif isinstance(input, ObjectDef) and \
+                    input.inherits_from is not None and \
+                    basic_type_check(input.inherits_from, expected_type):
+                print("Polymorphic type is a match!")
+                return True
             elif isinstance(input, ObjectDef):
                 print("ERROR: Name of object did not match!")
                 return False
