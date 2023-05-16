@@ -1,0 +1,15 @@
+(class main
+    (field int x 0)
+    (field string y "")
+    (field person z null)
+    (method void main ()
+        (begin
+            (print "input a number")
+            (inputs z)
+            (print x y z)
+        )
+    )
+)
+(class person
+    (field int a 0)
+)

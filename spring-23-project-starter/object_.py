@@ -207,15 +207,32 @@ class ObjectDef: # the instanciation of a class
     
     def __execute_inputs(self, statement, params, params_to_type,interpreter): #get string input and set to a field or parameter w/ matching name
         temp = interpreter.get_input()
-        if not is_string(temp):
-            print("Not instance of a string inputed to inputs")
+        
+        # convert the input to a string
+        temp = '"' + str(temp) + '"'
         
         input_var_name = statement.args[0]
-
-        if input_var_name in params:
-            params[input_var_name] = temp
+        if self.in_local_vars(input_var_name):
+            self.set_top_match_local_var(input_var_name, temp, interpreter)
+        elif input_var_name in params:
+            required_type = params_to_type[input_var_name]
+            if basic_type_check(temp, required_type):
+                if required_type.base_data_type == BaseDataType.OBJECT and isinstance(temp, NullType):
+                    temp.attached_class = required_type.class_name
+                params[input_var_name] = temp
+            else:
+                print("ERROR: Incompatible type when setting a parameter value")
+                interpreter.error(ErrorType.TYPE_ERROR)
         elif input_var_name in self.fields: # if the field name exists then set the field to that value
-            self.fields[input_var_name] = temp 
+            required_type = self.fields_to_type[input_var_name]
+            if basic_type_check(temp, required_type):
+                self.fields[input_var_name] = temp #ValueDef(type(value_to_set), value_to_set)
+            else:
+                print("ERROR: Incompatible type when setting a field value")
+                interpreter.error(ErrorType.TYPE_ERROR)
+        else:
+            print("Setting an unknown variable for inputs")
+            interpreter.error(ErrorType.NAME_ERROR)
 
     def __execute_inputi(self, statement, params, params_to_type, interpreter): #get integer input and set to a field or parameter w/ matching name
         temp = interpreter.get_input()
@@ -224,10 +241,27 @@ class ObjectDef: # the instanciation of a class
         
         input_var_name = statement.args[0]
 
-        if input_var_name in params:
-            params[input_var_name] = temp
+        if self.in_local_vars(input_var_name):
+            self.set_top_match_local_var(input_var_name, temp, interpreter)
+        elif input_var_name in params:
+            required_type = params_to_type[input_var_name]
+            if basic_type_check(temp, required_type):
+                if required_type.base_data_type == BaseDataType.OBJECT and isinstance(temp, NullType):
+                    temp.attached_class = required_type.class_name
+                params[input_var_name] = temp
+            else:
+                print("ERROR: Incompatible type when setting a parameter value")
+                interpreter.error(ErrorType.TYPE_ERROR)
         elif input_var_name in self.fields: # if the field name exists then set the field to that value
-            self.fields[input_var_name] = temp 
+            required_type = self.fields_to_type[input_var_name]
+            if basic_type_check(temp, required_type):
+                self.fields[input_var_name] = temp #ValueDef(type(value_to_set), value_to_set)
+            else:
+                print("ERROR: Incompatible type when setting a field value")
+                interpreter.error(ErrorType.TYPE_ERROR)
+        else:
+            print("Setting an unknown variable for inputs")
+            interpreter.error(ErrorType.NAME_ERROR)
     
     def is_expression(self, cur):
         exp_starts = {'+', '-', '*', '/', 
@@ -375,6 +409,7 @@ class ObjectDef: # the instanciation of a class
                 else:
                     print(a)
                     print("Error with the not operator")
+                    interpreter.error(ErrorType.TYPE_ERROR)
         elif two_op:
             if a_is_string and b_is_string:
                 a = a.strip('"')
@@ -446,10 +481,11 @@ class ObjectDef: # the instanciation of a class
             else:
                 print(a)
                 print(b)
-                interpreter.error(ErrorType.TYPE_ERROR)
                 print("Expression: The type of a and b is not consistent")
+                interpreter.error(ErrorType.TYPE_ERROR)
         else:
-            return "Expression ERROR, operation not supported"
+            print("Expression ERROR, operation not supported")
+            interpreter.error(ErrorType.TYPE_ERROR)
 
     def __execute_print(self, statement, params, params_to_type, interpreter):
         to_print = ""
@@ -857,7 +893,11 @@ class ObjectDef: # the instanciation of a class
                 already_used_names.add(name)
             base_data_type = BaseDataType.str_to_data_type(type_name)
             data_type = DataType(base_data_type, type_name)
-            cur_local_vars.append([data_type, name, value]) # formating is TYPE, NAME, VALUE
+            if basic_type_check(value, data_type):
+                cur_local_vars.append([data_type, name, value]) # formating is TYPE, NAME, VALUE
+            else:
+                print(f"Let arg has mismatching type!")
+                interpreter.error(ErrorType.TYPE_ERROR)
         
         # add cur_local_vars to the top of the local var stack
         self.local_var_stack.append(cur_local_vars)

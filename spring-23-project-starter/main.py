@@ -95,7 +95,9 @@ if __name__ == "__main__":
         "wrong_arg_test",
         "expression_test",
         "inher_9_test",
-         "let_test1"
+         "let_test1",
+         "input_test"
+        #"let_test2"
         #"null_obj_ref_test"
     ]
     # run the interpreter
