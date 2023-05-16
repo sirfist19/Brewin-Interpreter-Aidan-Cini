@@ -21,6 +21,51 @@ def is_string(cur): # returns true if the string is surrounded by double quotes 
         return False
     return cur == "" or (cur[0] == '\"' and cur[-1] == '\"')
 
+def type_check_two_values(a, b, interpreter):
+    #print("Comparing", a, b)
+    a_is_bool = a == InterpreterBase.TRUE_DEF \
+                    or a == InterpreterBase.FALSE_DEF or a is True or a is False
+    b_is_bool = b == InterpreterBase.TRUE_DEF \
+                    or b == InterpreterBase.FALSE_DEF or b is True or b is False
+    a_is_null_no_type = a == InterpreterBase.NULL_DEF or (isinstance(a, NullType) and a.is_null == True and a.attached_class is None) or a is None
+    b_is_null_no_type = b == InterpreterBase.NULL_DEF or (isinstance(b, NullType) and b.is_null == True and b.attached_class is None) or b is None
+    a_is_null_has_type = (isinstance(a, NullType) and a.is_null == True and a.attached_class is not None)
+    b_is_null_has_type = (isinstance(b, NullType) and b.is_null == True and b.attached_class is not None)
+    
+    # null against null -> both null
+    if (a_is_null_no_type and b_is_null_no_type)  or \
+       (a_is_null_has_type and b_is_null_no_type) or \
+       (b_is_null_has_type and a_is_null_no_type) or \
+       (a_is_null_has_type and b_is_null_has_type and (interpreter.a_inherits_b(a.attached_class,b.attached_class) or interpreter.a_inherits_b(b.attached_class,a.attached_class))): 
+        #print("Both a and b are null!", a_is_null_has_type, b_is_null_has_type)
+        return True
+    
+    # 1 object against 1 null
+    if (a_is_null_no_type and isinstance(b, ObjectDef)) or \
+       (b_is_null_no_type and isinstance(a, ObjectDef)) or \
+       (a_is_null_has_type and isinstance(b, ObjectDef) and ((interpreter.a_inherits_b(a.attached_class, b.name)) or (interpreter.a_inherits_b(b.name,a.attached_class)))) or \
+       (b_is_null_has_type and isinstance(a, ObjectDef) and ((interpreter.a_inherits_b(a.name, b.attached_class)) or (interpreter.a_inherits_b(b.attached_class,a.name)))):
+        return True
+    # cases to hanlde
+    # (field person x null)
+    # (field student y null)
+    # (== x (new person)) # the null with type needs to pass the type check against the same class of not null type
+    # (== x y) # nulls need to deal with inheritance
+
+    # object against object
+    if isinstance(a, ObjectDef) and isinstance(b, ObjectDef) and \
+        ((a.name == b.name) or (interpreter.a_inherits_b(a.name,b.name) or interpreter.a_inherits_b(b.name,a.name))):
+        #print("Object OPAB type match")
+        return True
+    if is_string(a) and is_string(b): # if both strings
+        return True
+    if is_number(a) and is_number(b): # if both numbers
+        return True
+    if a_is_bool and b_is_bool: # if both bools
+        return True
+    print("Checking two values is Returning false", a, b)
+    return False
+
 def basic_type_check(input, expected_type):
         # makes sure the input is of expected type
         #   expected type is of type 
@@ -28,18 +73,18 @@ def basic_type_check(input, expected_type):
         #      Expected Type: {expected_type}, ")
         expected_base_type = expected_type.base_data_type
         expected_class_name = expected_type.class_name
-
+        #print("TYPING: ", input, expected_base_type, expected_class_name)
         if expected_base_type == BaseDataType.OBJECT: 
             if input == InterpreterBase.NULL_DEF or (isinstance(input, NullType) and input.is_null == True):
                 return True
-            elif isinstance(input, ObjectDef) and \
-                input.name == expected_class_name: # name check for objects!
+            elif isinstance(input, ObjectDef) \
+                and input.name == expected_class_name: # name check for objects!
                 return True
             # polymorphism type check -> check the base class to see if it is a type match
             elif isinstance(input, ObjectDef) and \
-                    input.inherits_from is not None and \
-                    basic_type_check(input.inherits_from, expected_type):
-                print("Polymorphic type is a match!")
+                    input.to_base is not None and \
+                    basic_type_check(input.to_base, expected_type):
+                #print("Polymorphic type is a match!")
                 return True
             elif isinstance(input, ObjectDef):
                 print("ERROR: Name of object did not match!")
@@ -69,7 +114,29 @@ class ObjectDef: # the instanciation of a class
         self.fields = {}
         self.fields_to_type = {}
         self.local_var_stack = []
-        self.inherits_from = None # either None or ObjDef of the inherited class (as an object)
+
+        # inherits_from points to the base class
+        self.to_base = None # either None or ObjDef of the inherited class (as an object)
+
+        # to the original object instantiated (if this is None, then this is the original object)
+        self.to_derived = None
+
+    def display(self):
+        print("~~~OBJECT DISPLAY~~~")
+        print(f"Name: {self.name}")
+        print(f"Methods: {self.methods}")
+        print(f"Fields: {self.fields}")
+        print(f"Fields to types: {self.fields_to_type}")
+        print(f"Local var stack: {self.local_var_stack}")
+
+        if self.to_base is not None:
+            print(f"To base object: {self.to_base.name}")
+        else:
+            print(f"To base object: None")
+        if self.to_derived is not None:
+            print(f"To derived object: {self.to_derived.name}")
+        else:
+            print(f"To derived object: None")
 
     def add_method(self, method): # method should be of type MethodDef
         self.methods[method.name] = method
@@ -85,8 +152,8 @@ class ObjectDef: # the instanciation of a class
             self.method_matches_input_values_TYPE_CHECK(self.methods[method_name],param_values):
             # runs the method using a helper on this obj
             return self.run_method_helper(self.methods[method_name], param_values, interpreter)
-        elif self.inherits_from is not None:
-            return self.inherits_from.__find_method(method_name, param_values, interpreter) 
+        elif self.to_base is not None:
+            return self.to_base.__find_method(method_name, param_values, interpreter) 
         else:
             print("Cannot find function to run ... or the input types or amounts didn't match!")
             interpreter.error(ErrorType.NAME_ERROR)
@@ -116,13 +183,16 @@ class ObjectDef: # the instanciation of a class
                                     interpreter)
             #print("Before default typing", result, method.return_type.base_data_type)
 
-            # add in default typing for no return statement or (return) statement
-        if (result is None or (isinstance(result, NullType) and result.is_null == False)) \
-                and method.return_type.base_data_type != BaseDataType.VOID:
+        # add in default typing for no return statement or (return) statement
+        # do default typing if the only statement is CALL, or if nothing is returned (as a None or NullType with is_null as false)
+        if method.statement.type == StatementType.CALL or \
+                (result is None or (isinstance(result, NullType) and result.is_null == False)):
+                #and method.return_type.base_data_type != BaseDataType.VOID):
             result = BaseDataType.get_default_value(method.return_type.base_data_type)
-                #print("After default typing", result, method.return_type.base_data_type)
+        
+        #print("After default typing", result, method.return_type.base_data_type)
 
-                # return type checking
+        # return type checking
         if basic_type_check(result, method.return_type):
             return result 
         else: 
@@ -170,6 +240,7 @@ class ObjectDef: # the instanciation of a class
         # handling the call expression
         if expression[0] == InterpreterBase.CALL_DEF:
             # Ex: (print (call me echo 5)) -> the call statement
+            #print(params)
             call_statement = StatementDef(expression)
             res = self.__run_statement(call_statement, params, params_to_type, interpreter)
             #print("res from __handle_expression: ", res)
@@ -185,11 +256,13 @@ class ObjectDef: # the instanciation of a class
         
         # otherwise, it is not a new or call expression and has a normal operator as the first element
         # op = operator, a = first value, b = second value
+        two_operands = True
         if len(expression) < 2:
             print("Expression length is not long enough. Needs to have at least an op and a value")
         elif len(expression) == 2:
             op, a = expression[0:2]
             b = None
+            two_operands = False
         else:
             op, a, b = expression[0:3]
         
@@ -240,6 +313,9 @@ class ObjectDef: # the instanciation of a class
             a = int(a)
         if b and isinstance(b, str) and is_number(b):
             b = int(b)
+
+        if two_operands and not type_check_two_values(a,b, interpreter): # type check between the two values a and b!
+            interpreter.error(ErrorType.TYPE_ERROR)
 
         # if a or b is a bool, convert to a bool
         if a == InterpreterBase.TRUE_DEF:
@@ -441,7 +517,6 @@ class ObjectDef: # the instanciation of a class
                 print(f"ERROR: Unknown arg to print: {cur}", type(cur))
                 interpreter.error(ErrorType.NAME_ERROR)
         interpreter.output(to_print)
-        #print(to_print)
     
     def __execute_begin(self, statement, params, params_to_type, interpreter):
         sub_statements = statement.args
@@ -490,6 +565,8 @@ class ObjectDef: # the instanciation of a class
         elif var_name in params:
             required_type = params_to_type[var_name]
             if basic_type_check(value_to_set, required_type):
+                if required_type.base_data_type == BaseDataType.OBJECT and isinstance(value_to_set, NullType):
+                    value_to_set.attached_class = required_type.class_name
                 params[var_name] = value_to_set
             else:
                 print("ERROR: Incompatible type when setting a parameter value")
@@ -571,6 +648,9 @@ class ObjectDef: # the instanciation of a class
     
     def __execute_expession(self, expression, params, params_to_type, interpreter):
         expression_val = expression
+        # if the expression is ME
+        if not isinstance(expression,list) and expression == InterpreterBase.ME_DEF:
+            return self.get_me()
         # if the expression is a local var (the name of a)
         if not isinstance(expression, list) and self.in_local_vars(expression):
             return self.get_top_match_local_var(expression)[2] # of format [TYPE, NAME, VALUE]
@@ -609,6 +689,11 @@ class ObjectDef: # the instanciation of a class
             interpreter.error(ErrorType.NAME_ERROR)
         return expression_val
     
+    def get_me(self): # returns the most derived version of this object (in other words, the originally instantiated object)
+        if self.to_derived is None:
+            return self
+        return self.to_derived.get_me()
+
     def __execute_call(self, statement, old_params, old_params_to_type, interpreter):
         #print("Parsing a call statement")
         # Syntax
@@ -636,21 +721,24 @@ class ObjectDef: # the instanciation of a class
             
                 #params_types[i] = old_params_to_type[params[i]]
         #print("Params before running the method to call: ", params, params_types, old_params, old_params_to_type)
-
+        #print("Obj_to_call: ", obj_to_call_name)
         # call me
         if obj_to_call_name == InterpreterBase.ME_DEF:
+            me = self.get_me()
             func_to_call = statement.args[1]
-            res = self.run_method(func_to_call, params, interpreter)
+            res = me.run_method(func_to_call, params, interpreter)
             #print("From exec call: ", res)
             return res
         elif obj_to_call_name == InterpreterBase.SUPER_DEF:
             func_to_call = statement.args[1]
-            res = self.inherits_from.run_method(func_to_call, params, interpreter)
+            res = self.to_base.run_method(func_to_call, params, interpreter)
             return res
         # obj_to_call_name could be an expression. Handle that
         elif self.is_expression(obj_to_call_name):
+            #print("Is expression")
+            #print(old_params, params)
             expression = obj_to_call_name
-            obj_to_call = self.__handle_expression(expression, params, params_types, interpreter)
+            obj_to_call = self.__handle_expression(expression, old_params, params_types, interpreter)
             if obj_to_call == None or not isinstance(obj_to_call, ObjectDef):
                 print("Cannot call function on null object!")
                 interpreter.error(ErrorType.FAULT_ERROR)
@@ -700,7 +788,7 @@ class ObjectDef: # the instanciation of a class
         expression_to_return = statement.args[0]
         #print("expression_to_return", expression_to_return, params)
         res = self.__execute_expession(expression_to_return, params, params_to_type, interpreter) #execute the condition
-        print("From __execute_return returning: ", res)
+        #print("From __execute_return returning: ", res)
         return res
     
     def in_local_vars(self, cur):

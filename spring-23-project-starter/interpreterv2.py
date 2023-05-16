@@ -13,6 +13,7 @@ class Interpreter(InterpreterBase):
         #define stuff here!
         super().__init__(console_output,inp)
         self.classes = {} # name to classes
+        self.inheritance_map = {} # if Student inherits Person, then has entry "Student": "Person" and "Person": None
     
     def run(self, program):
         # parse the program into a more easily processed form
@@ -27,7 +28,7 @@ class Interpreter(InterpreterBase):
         # INTERPRET THE PROGRAM 
         print(f'HERE IS THE PARSED PROGRAM: \n{parsed_program}')
         self.define_fundamentals(parsed_program)
-            #print(self.classes)
+        print("Inheritance Map: ", self.inheritance_map)
         main_class = self.find_definition_for_class("main")
 
         obj = main_class.instantiate_object()
@@ -79,6 +80,8 @@ class Interpreter(InterpreterBase):
                             value = NullType(True) # is_null field is true cause this is a null value
                         
                         if basic_type_check(value, type_):
+                            if type_.base_data_type == BaseDataType.OBJECT and isinstance(value, NullType):
+                                value.attached_class = type_.class_name # sets the attached class of the NullType to the class_name of the field
                             cur_field = VariableDef(name, value, type_)
                             cur_class.add_field(cur_field)
                         else:
@@ -126,15 +129,27 @@ class Interpreter(InterpreterBase):
                     class_inherits_from_name = class_def[i+1]
                     #print(f"{class_name} inherits from {class_inherits_from_name}")
                     class_inherits_from = self.find_definition_for_class(class_inherits_from_name)
-                    cur_class.inherits_from = class_inherits_from
-                    #print(cur_class.inherits_from.methods)
+                    cur_class.to_base = class_inherits_from
 
             # add the current class to the list
                 #print("Adding a class")
+            if cur_class.to_base is not None:
+                self.inheritance_map[cur_class.name] = cur_class.to_base.name
+            else:
+                self.inheritance_map[cur_class.name] = None
             self.classes[cur_class.name] = cur_class
         #for class_name, class_ in self.classes.items():
         #    print(class_name, class_)
     # print all of the line numbers for all tokens in parsed program
+
+    def a_inherits_b(self, a,b):
+        # uses the self.inheritane_map to figure our if class with name a inherits from class with name b
+        if self.inheritance_map[a] is None:
+            return False
+        if self.inheritance_map[a] == b:
+            return True
+        return self.a_inherits_b(self.inheritance_map[a], b)
+    
     def print_line_nums(self, parsed_program):
         for item in parsed_program:
             if type(item) is not list:

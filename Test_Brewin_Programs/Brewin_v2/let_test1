@@ -1,6 +1,7 @@
 (class main
     (field string long_str "")
-    (method void foo ((int x))
+    (field person x null)
+    (method person foo ((int x))
         (begin
             (print x) # Line #1: prints 10
             (let ((bool x true) (int y 5))
@@ -13,9 +14,13 @@
                         (set y (- y 1))
                         (set q (new person))
                         (set p q)
-                        (call p set_i y)
-                        (call p display)
-                        (call q display)
+                        (begin
+                            (call p set_i y)
+                            (call p display)
+                            (call q display)
+                            (return)
+                        )
+                        
                     )
                 )
                 (print y) # prints 0

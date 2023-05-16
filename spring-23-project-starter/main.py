@@ -82,14 +82,20 @@ if __name__ == "__main__":
     test_paths_v2 = [
         "add_test",
         "helloworld",
-        "wrong_arg_test",
+        
         "return_type_test",
         "while_return_test2",
         "default_return_test",
         "cmp_null_test3",
-        "let_test1",
+       
         "inherit_test1",
-        "polymorphism_test1"
+        "polymorphism_test1",
+        "return_me_test",
+        "rpg_test",
+        "wrong_arg_test",
+        "expression_test",
+        "inher_9_test",
+         "let_test1"
         #"null_obj_ref_test"
     ]
     # run the interpreter

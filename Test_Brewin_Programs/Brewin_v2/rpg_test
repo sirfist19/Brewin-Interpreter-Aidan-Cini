@@ -1,0 +1,82 @@
+(class main
+    (field Player player null)
+    (field Enemy enemy null)
+    (method void main ()
+        (begin
+          (print "starting game")
+          (set player (new Player))
+          (set enemy (new Enemy))
+          (call player init "sirfist" 10 3) # 10 health, 3 attack
+          (call enemy init "Skele" 5 2) # 5 health, 2 attack
+          (call player display)
+          #(call player damage 3)
+          #(call player display)
+          (call enemy display)
+          (print "Attacking turn")
+          (call me attack_turn)
+          (call player display) # has 8 health
+          (call enemy display) # has 2 health
+          #(print (call (call (new other) func1 3) func2 5))
+          (print "ending game")
+        )
+    ) 
+    (method void attack_turn ()
+      (begin
+        (call player attack enemy)
+        (call enemy attack player)
+      )
+    )
+) 
+#(class other
+#    (method func1 (x) 
+#        (return (new other))
+#    )
+#    (method func2 (x)
+#        (begin
+#            (print x)
+#            (return 0)
+#        )
+#    )
+#)
+(class Living_Thing
+    (field string name "")
+    (field int health 0)
+    (field int attack 0)
+    (method void init ((string name_) (int health_) (int attack_))
+        (begin
+          (set name name_)
+          (set health health_)
+          (set attack attack_)
+        )
+    )
+    (method void display ()
+        (print name " has " health " health.")
+    )
+    (method int get_attack ()
+        (return attack)
+    )
+    (method void damage ((int amt))
+        (begin
+            (set health (- health amt))
+            (if (< health 0)
+                (set health 0)
+            )
+        )
+    )
+)
+(class Player inherits Living_Thing
+  (method void attack ((Enemy enemy))
+    (begin
+      (print "Attacking the enemy")
+      (call enemy damage (call super get_attack))
+    )
+  )
+)
+(class Enemy inherits Living_Thing
+  (method void attack ((Player player))
+    (begin
+      (print "Attacking the player")
+      (call player damage (call super get_attack))
+    )
+  )
+)

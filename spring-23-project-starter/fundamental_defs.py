@@ -58,8 +58,8 @@ class BaseDataType(Enum):
         elif dataType == BaseDataType.OBJECT:
             return NullType(True) # is_null is true
         elif dataType == BaseDataType.VOID:
-            print("ERROR: Getting default value for void")
-            return None
+            #print("ERROR: Getting default value for void")
+            return NullType(False)
         else:
             print("ERROR: Translating unrecognized data type")
 
@@ -75,6 +75,7 @@ class NullType(): # to return from (return) and (return null)
         def __init__(self, is_null): 
             self.is_null = is_null # if null is returned this is true, 
                     #if returning from an empty return, this is false
+            self.attached_class = None # set this to a class_name given a declaration like this (set x null) where x is of class class_name
 
 class StatementDef:
     # if, begin, print, set, inputi, inputs, call, while, return
@@ -136,7 +137,7 @@ class MethodDef:
         param_name_list = list(self.param_map_name_to_value.keys())
         for i in range(len(method_values)):
             required_type = self.param_map_name_to_type[param_name_list[i]]
-            print("Required type: ", required_type.base_data_type, method_values[i])
+            #print("Required type: ", required_type.base_data_type, method_values[i])
 
             # if the passed in value is false or true, convert it to a python bool
             if method_values[i] == InterpreterBase.FALSE_DEF:

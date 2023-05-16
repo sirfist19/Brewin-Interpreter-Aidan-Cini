@@ -1,8 +1,11 @@
 (class thingy
     (method void nothing () (print "thingy says hi!"))
 )
-(class thingy2
+(class thingy2 inherits thingy
     (method void nothing () (print "thingy2 says hi!"))
+)
+(class unrelated
+    (field int a 0)
 )
 
 (class main
@@ -28,11 +31,24 @@
     (field string y "hi there")
     (field bool z false)
     (field thingy a null)
+    (field thingy2 b null)
     (method void main ()
         (begin
             #(print (call me echo_string y))
             #(print (call me echo_int x))
             #(print (call me echo_bool z))
+            #(call me echo_thingy null null)
+            #(set a (new thingy))
+            (set b (new thingy2))
+            (if (== a b)
+                (print "True")
+                (print "False")
+            )
+            (print "True:" (!= null (new thingy)))
+            (print "True:" (== null null))
+            (print "True:" (== null a))
+            (print "False:" (== (new unrelated) (new unrelated))) 
+
             (set a (new thingy)) # should work
             (print (call (call me echo_thingy a) nothing))
             #(call me test_invalid_parameter_set y)
