@@ -1,0 +1,49 @@
+(class person
+  (field int x 1)
+  (method string hi () (call me hi1))
+  (method string hi1 () (print "person hello"))
+)
+
+(class student inherits person
+  (field int x 1)
+  (method int x () (set x 5))
+  (method string hi1 () (print "student hello"))
+  (method student return_me () 
+    (begin
+     (set x 10)
+     #(return me) 
+    )
+  )
+  (method void returns_nothing ()
+    (set x 10)
+  )
+  (method void set_param ((student s) (person p))
+    (begin
+      (print "setting param")
+      (set s p) # should fail
+    )
+  )
+)
+
+(class main
+    (field person P null)
+    (field student S null)
+    (method void main ()
+      (let ((int x 4) (student y null))
+        (print x)
+        (print y)
+        #(set S (new student))
+        (set P (new person))
+        #(set x (call (new student) x))
+        #(set y (call (new student) return_me))
+        #(set P (call (new student) returns_nothing))
+        #(set y (call (new student) returns_nothing))
+        (call (new student) set_param S P)
+        (print "START HERE")
+        #(set P S)
+        #(set S P) # should not be able to set derived class Student to Base Class Person
+        (print x)
+        (print y)
+      )
+    )
+  )

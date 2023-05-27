@@ -96,7 +96,14 @@ if __name__ == "__main__":
         "expression_test",
         "inher_9_test",
          "let_test1",
-         "input_test"
+         "linked_list_test",
+         #"dup_class_test"
+         "temp_test1"
+         #"inher_cmp_test",
+         #"incom_cmp_test",
+         #"return_assign_type_test",
+         #"test_temp"
+         #"input_test"
         #"let_test2"
         #"null_obj_ref_test"
     ]

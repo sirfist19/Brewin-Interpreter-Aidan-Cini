@@ -1,0 +1,78 @@
+(class living_thing
+    (method void a ()
+        (print "living_thing's A") 
+    )
+)
+(class mammal inherits living_thing
+    (method void c ()
+        (call me a) # this needs to call living_thing and not human's a ... maybe me should call the human when it is a human
+    )
+)
+(class reptile inherits living_thing
+    (method void a ()
+        (print "reptile's A")
+    )
+)
+(class snake inherits reptile
+    (method void a ()
+        (print "SSSSSSSSSnake's A")
+    )
+)
+(class human inherits mammal
+    (method void a ()
+        (print "human's A")
+    )
+    (method void b ()
+        (call me c)
+    ) # calls a method on mammal
+)
+(class dog inherits mammal
+    (method void a ()
+        (print "dog's A")
+    )
+)
+(class puppy inherits dog
+    (method void a ()
+        (print "cute puppy's A")
+    )
+)
+(class machine
+    (method void a ()
+        (print "machine's A")
+    )
+)
+(class robot inherits machine
+    (method void a ()
+        (print "robot's A")
+    )
+)
+
+
+(class main
+    (field machine _machine null)
+    (field robot _robot null)
+    (field living_thing _living_thing null)
+    (field reptile _reptile null)
+    (field snake _snake null)
+    (field mammal _mammal null)
+    (field dog _dog null)
+    (field puppy _puppy null)
+    (field human _human null)
+    (method void main ()
+        (begin
+            (print (== _human _mammal)) # should be ok
+            (print (== _mammal _human))
+            (print (!= _puppy _living_thing))
+            (print (!= _living_thing _puppy))
+            (set _puppy (new puppy))
+            (print (!= _puppy _living_thing))
+            (print (!= _living_thing _puppy))
+            (set _living_thing (new living_thing))
+            (print (!= _puppy _living_thing))
+            (print (!= _living_thing _puppy))
+            (set _human (new human))
+            (print (== _puppy _human))
+            #(print (== _mammal _reptile))
+        )
+    )
+)

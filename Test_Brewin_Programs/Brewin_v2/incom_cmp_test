@@ -1,0 +1,10 @@
+#bad type param is checking if parameters in a method are typed with a class #that's not defined yet
+(class main
+  #(field Object a null)
+  (method void main ()
+    (call me give_me_obj null)
+  )
+  (method Object give_me_obj () # object is not defined so should give TYPE_ERROR
+    (return null)
+  )
+)

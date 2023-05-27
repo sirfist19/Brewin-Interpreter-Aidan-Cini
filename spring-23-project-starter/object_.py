@@ -66,16 +66,25 @@ def type_check_two_values(a, b, interpreter):
     print("Checking two values is Returning false", a, b)
     return False
 
-def basic_type_check(input, expected_type):
+def basic_type_check(input, expected_type, interpreter):
         # makes sure the input is of expected type
         #   expected type is of type 
-        #print(f"Input: {input}, \
-        #      Expected Type: {expected_type}, ")
+        
         expected_base_type = expected_type.base_data_type
         expected_class_name = expected_type.class_name
+        print(f"Input: {input}, \
+              Expected Type: {expected_base_type, expected_class_name}, ")
+        if isinstance(input, NullType):
+            print("Null type class:", input.attached_class)
         #print("TYPING: ", input, expected_base_type, expected_class_name)
         if expected_base_type == BaseDataType.OBJECT: 
-            if input == InterpreterBase.NULL_DEF or (isinstance(input, NullType) and input.is_null == True):
+            if input == InterpreterBase.NULL_DEF or \
+                (isinstance(input, NullType) and \
+                 input.is_null == True and input.attached_class is None):
+                return True
+            elif isinstance(input, NullType) and input.is_null == True and \
+                (input.attached_class == expected_class_name or \
+                 interpreter.a_inherits_b(input.attached_class, expected_class_name)):
                 return True
             elif isinstance(input, ObjectDef) \
                 and input.name == expected_class_name: # name check for objects!
@@ -83,7 +92,7 @@ def basic_type_check(input, expected_type):
             # polymorphism type check -> check the base class to see if it is a type match
             elif isinstance(input, ObjectDef) and \
                     input.to_base is not None and \
-                    basic_type_check(input.to_base, expected_type):
+                    basic_type_check(input.to_base, expected_type, interpreter):
                 #print("Polymorphic type is a match!")
                 return True
             elif isinstance(input, ObjectDef):
@@ -149,7 +158,7 @@ class ObjectDef: # the instanciation of a class
 
     def __find_method(self, method_name, param_values, interpreter): # also runs the method
         if method_name in self.methods and \
-            self.method_matches_input_values_TYPE_CHECK(self.methods[method_name],param_values):
+            self.method_matches_input_values_TYPE_CHECK(self.methods[method_name],param_values, interpreter):
             # runs the method using a helper on this obj
             return self.run_method_helper(self.methods[method_name], param_values, interpreter)
         elif self.to_base is not None:
@@ -158,7 +167,7 @@ class ObjectDef: # the instanciation of a class
             print("Cannot find function to run ... or the input types or amounts didn't match!")
             interpreter.error(ErrorType.NAME_ERROR)
     
-    def method_matches_input_values_TYPE_CHECK(self, method, input_values):
+    def method_matches_input_values_TYPE_CHECK(self, method, input_values, interpreter):
         # checks to see if the method to be called matches the argument types of the input_values provided
         num_inputs = len(input_values)
         num_expected_params = len(method.param_map_name_to_type.keys())
@@ -169,7 +178,7 @@ class ObjectDef: # the instanciation of a class
         for i in range(num_inputs):
             cur_input = input_values[i]
             cur_expected_type = param_type_list[i]
-            if not basic_type_check(cur_input, cur_expected_type):
+            if not basic_type_check(cur_input, cur_expected_type, interpreter):
                 return False
         return True
     
@@ -193,7 +202,7 @@ class ObjectDef: # the instanciation of a class
         #print("After default typing", result, method.return_type.base_data_type)
 
         # return type checking
-        if basic_type_check(result, method.return_type):
+        if basic_type_check(result, method.return_type, interpreter):
             return result 
         else: 
             print(f"ERROR: After method of name {method.name} was run, the return value of {result} was not of type {method.return_type.base_data_type}")
@@ -216,7 +225,7 @@ class ObjectDef: # the instanciation of a class
             self.set_top_match_local_var(input_var_name, temp, interpreter)
         elif input_var_name in params:
             required_type = params_to_type[input_var_name]
-            if basic_type_check(temp, required_type):
+            if basic_type_check(temp, required_type, interpreter):
                 if required_type.base_data_type == BaseDataType.OBJECT and isinstance(temp, NullType):
                     temp.attached_class = required_type.class_name
                 params[input_var_name] = temp
@@ -225,7 +234,7 @@ class ObjectDef: # the instanciation of a class
                 interpreter.error(ErrorType.TYPE_ERROR)
         elif input_var_name in self.fields: # if the field name exists then set the field to that value
             required_type = self.fields_to_type[input_var_name]
-            if basic_type_check(temp, required_type):
+            if basic_type_check(temp, required_type, interpreter):
                 self.fields[input_var_name] = temp #ValueDef(type(value_to_set), value_to_set)
             else:
                 print("ERROR: Incompatible type when setting a field value")
@@ -245,7 +254,7 @@ class ObjectDef: # the instanciation of a class
             self.set_top_match_local_var(input_var_name, temp, interpreter)
         elif input_var_name in params:
             required_type = params_to_type[input_var_name]
-            if basic_type_check(temp, required_type):
+            if basic_type_check(temp, required_type, interpreter):
                 if required_type.base_data_type == BaseDataType.OBJECT and isinstance(temp, NullType):
                     temp.attached_class = required_type.class_name
                 params[input_var_name] = temp
@@ -254,7 +263,7 @@ class ObjectDef: # the instanciation of a class
                 interpreter.error(ErrorType.TYPE_ERROR)
         elif input_var_name in self.fields: # if the field name exists then set the field to that value
             required_type = self.fields_to_type[input_var_name]
-            if basic_type_check(temp, required_type):
+            if basic_type_check(temp, required_type, interpreter):
                 self.fields[input_var_name] = temp #ValueDef(type(value_to_set), value_to_set)
             else:
                 print("ERROR: Incompatible type when setting a field value")
@@ -600,7 +609,7 @@ class ObjectDef: # the instanciation of a class
         # if a parameter
         elif var_name in params:
             required_type = params_to_type[var_name]
-            if basic_type_check(value_to_set, required_type):
+            if basic_type_check(value_to_set, required_type, interpreter):
                 if required_type.base_data_type == BaseDataType.OBJECT and isinstance(value_to_set, NullType):
                     value_to_set.attached_class = required_type.class_name
                 params[var_name] = value_to_set
@@ -613,7 +622,7 @@ class ObjectDef: # the instanciation of a class
             
             #print("CURRENT STATE OF FIELDS: ",self.fields, [(name, type_.base_data_type, type_.class_name) for name, type_ in self.fields_to_type.items()])
             required_type = self.fields_to_type[var_name]
-            if basic_type_check(value_to_set, required_type):
+            if basic_type_check(value_to_set, required_type, interpreter):
                 self.fields[var_name] = value_to_set #ValueDef(type(value_to_set), value_to_set)
             else:
                 print("ERROR: Incompatible type when setting a field value")
@@ -860,7 +869,7 @@ class ObjectDef: # the instanciation of a class
     
                 if name == cur: # a match is found (cur is the variable to set's name)
                     #print(value_to_set, required_type.base_data_type, required_type.class_name)
-                    if basic_type_check(value_to_set, required_type):
+                    if basic_type_check(value_to_set, required_type, interpreter):
                         local_var[2] = value_to_set # set the local variable
                         return
                     else:
@@ -893,7 +902,7 @@ class ObjectDef: # the instanciation of a class
                 already_used_names.add(name)
             base_data_type = BaseDataType.str_to_data_type(type_name)
             data_type = DataType(base_data_type, type_name)
-            if basic_type_check(value, data_type):
+            if basic_type_check(value, data_type, interpreter):
                 cur_local_vars.append([data_type, name, value]) # formating is TYPE, NAME, VALUE
             else:
                 print(f"Let arg has mismatching type!")

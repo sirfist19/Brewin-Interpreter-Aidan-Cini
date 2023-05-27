@@ -28,6 +28,7 @@ class Interpreter(InterpreterBase):
         # INTERPRET THE PROGRAM 
         print(f'HERE IS THE PARSED PROGRAM: \n{parsed_program}')
         self.define_fundamentals(parsed_program)
+        self.verify_classes()
         print("Inheritance Map: ", self.inheritance_map)
         main_class = self.find_definition_for_class("main")
 
@@ -38,6 +39,52 @@ class Interpreter(InterpreterBase):
 
         interpreter = self
         obj.run_method("main", [], interpreter) # run main with no args
+
+    def type_is_defined(self, type_, not_verifying_return_type):
+        base_type = type_.base_data_type
+        class_name = type_.class_name
+        #print(f"Verifying {base_type, class_name} exists!")
+        #print(f"Class names defined: {set(self.classes.keys())}")
+        if not_verifying_return_type:
+            if base_type == BaseDataType.BOOL or \
+                base_type == BaseDataType.INT or \
+                base_type == BaseDataType.STRING: # fields should not have VOID type
+                #print("a")
+                return True
+            if base_type == BaseDataType.OBJECT and class_name in self.classes.keys():
+                #print("b")
+                return True
+        else: # verifying a return type
+            if base_type == BaseDataType.BOOL or \
+                  base_type == BaseDataType.INT or\
+                     base_type == BaseDataType.STRING or\
+                        base_type == BaseDataType.VOID: # fields should not have VOID type
+                #print("c")
+                return True
+            if base_type == BaseDataType.OBJECT and class_name in set(self.classes.keys()):
+                #print("d")
+                return True
+        #print("Does not exist")
+        return False
+    
+    def verify_classes(self): # checks each class's fields and method to be sure that all types are actually defined
+        #the methods to see that all referenced paramaters are actually defined
+        
+        for class_ in self.classes.values():
+            for type_ in class_.fields_to_type.values():
+                # make sure that the type of fields is defined
+                if not self.type_is_defined(type_, True):
+                    self.error(ErrorType.TYPE_ERROR)
+            #print("methods:", class_.methods)
+            for method_ in class_.methods.values():
+                # make sure that the types of the parameters are defined
+                for type_ in method_.param_map_name_to_type.values():
+                    if not self.type_is_defined(type_, True):
+                        self.error(ErrorType.TYPE_ERROR)
+                # make sure that the return type is defined
+                type_ = method_.return_type
+                if not self.type_is_defined(type_, False):
+                    self.error(ErrorType.TYPE_ERROR)
 
     def define_fundamentals(self, parsed_program):
         # for each class in the program ... parse the class and add it to the interpreter classes
@@ -55,7 +102,7 @@ class Interpreter(InterpreterBase):
                 print("Error! Not in a class: ", class_def[0])
 
             class_name = class_def[1]
-        
+            
             # handle duplicate classes when the name is already set
             if class_name in self.classes: 
                 print("duplicate class: ", class_name, self.classes)
@@ -79,7 +126,7 @@ class Interpreter(InterpreterBase):
                         if value == InterpreterBase.NULL_DEF:
                             value = NullType(True) # is_null field is true cause this is a null value
                         
-                        if basic_type_check(value, type_):
+                        if basic_type_check(value, type_, self):
                             if type_.base_data_type == BaseDataType.OBJECT and isinstance(value, NullType):
                                 value.attached_class = type_.class_name # sets the attached class of the NullType to the class_name of the field
                             cur_field = VariableDef(name, value, type_)
@@ -119,6 +166,8 @@ class Interpreter(InterpreterBase):
                                                return_type)
                         
                         #print("Adding a method")
+                        for name, type_ in param_map_name_to_type.items():
+                            print(name, type_.base_data_type, type_.class_name)
                         #print(f'Name: {name}, Params: {param_map_name_to_type, param_map_name_to_value}, Statement: {statement.type, statement.args}')
                         cur_class.add_method(cur_method)
                     else:

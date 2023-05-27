@@ -89,6 +89,10 @@ class StatementDef:
         self.args = args 
 
     def create_statement(self, statement_data): # statement data is the list of everything that will be the statement
+        #print("DATA: ", statement_data)
+        if len(statement_data) == 0:
+            return NullType(False), NullType(False)
+        
         if statement_data[0] == InterpreterBase.PRINT_DEF:
             #handle print statement
             return (StatementType.PRINT, statement_data[1:])

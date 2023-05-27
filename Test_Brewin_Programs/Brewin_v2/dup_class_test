@@ -1,0 +1,26 @@
+(class main
+  (method void foo ((int x))
+    (let ((int y 5) (string z "bar"))
+      (call me hi)
+    )
+  )
+  (method void main ()
+    (call me foo 10)
+  )
+  (method void hi ()
+    (begin
+      (print y) # this should error
+    )
+  )
+)
+
+# the fix to this test case is to place the local_var_stack within a method
+#   access the local_var stack via 
+#       method = self. WHATEVER_THE_CURRENT_METHOD_IS 
+# -> interesting idea: make self.cur_method a member variable
+#   -> this will probably improve all of the passing of parameters as well
+#   -> can also add self.interpreter
+#       method.local_var_stack
+
+# push and pop from the method, and when a call statement goes to another
+#   function then that function will have a different local_var_stack
